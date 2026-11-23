@@ -371,7 +371,7 @@ static NSString * const kSourcesLastRefreshKey = @"RepoTweaksLastRefreshTimestam
 
     UILabel *label = [[UILabel alloc] init];
     label.translatesAutoresizingMaskIntoConstraints = NO;
-    label.text = @"Refreshing sources…";
+    label.text = @"正在刷新源…";
     label.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightSemibold];
     label.textColor = UIColor.whiteColor;
     label.tag = 102;
@@ -415,7 +415,7 @@ static NSString * const kSourcesLastRefreshKey = @"RepoTweaksLastRefreshTimestam
     } completion:^(BOOL finished) {
         [spinner stopAnimating];
         checkmark.hidden = NO;
-        label.text = @"Sources up to date";
+        label.text = @"源已是最新";
         [UIView animateWithDuration:0.2 animations:^{
             checkmark.alpha = 1.0;
         }];
@@ -446,7 +446,7 @@ static NSString * const kSourcesLastRefreshKey = @"RepoTweaksLastRefreshTimestam
                                                green:partial ? 0.58 : 0.20
                                                 blue:0.10
                                                alpha:0.95];
-    label.text = partial ? @"Some sources could not be refreshed" : @"Source refresh failed";
+    label.text = partial ? @"部分源刷新失败" : @"源刷新失败";
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         if (self.refreshBanner != banner) return;
         self.refreshBanner = nil;

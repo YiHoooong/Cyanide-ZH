@@ -88,18 +88,18 @@ static BOOL PackageRepoScriptRequiresNativeBridge(NSString *rawScript)
                                repoTweakID:(NSString *)repoTweakID
                               repoScriptURL:(NSString *)repoScriptURL
 {
-    NSString *source = repoName.length ? repoName : @"Repo Source";
+    NSString *source = repoName.length ? repoName : @"仓库源";
     NSString *longDescription = shortDescription.length > 0
         ? shortDescription
-        : @"JavaScript tweak from a source.";
+        : @"来自某个源的 JavaScript 插件。";
 
     if ((self = [self initWithIdentifier:identifier
                                     name:name.length ? name : repoTweakID
-                        shortDescription:shortDescription.length ? shortDescription : @"JavaScript tweak from a source"
+                        shortDescription:shortDescription.length ? shortDescription : @"来自某个源的 JavaScript 插件"
                          longDescription:longDescription
                                  version:version.length ? version : @"1.0"
                                   author:author.length ? author : source
-                                category:@"JavaScript Tweaks"
+                                category:@"JavaScript 插件"
                               symbolName:@"shippingbox.and.arrow.down.fill"
                                     kind:PackageInstallKindRepoTweak
                               enabledKey:nil
@@ -315,7 +315,7 @@ static BOOL PackageRepoScriptRequiresNativeBridge(NSString *rawScript)
                                                  &downloadMessage)) {
                 log_user("[INSTALLER] Cannot install %s: %s Refresh the source and try again.\n",
                          self.name.UTF8String,
-                         (downloadMessage ?: @"could not fetch the latest cache-busted script.").UTF8String);
+                         (downloadMessage ?: @"无法获取最新的绕缓存脚本。").UTF8String);
                 return NO;
             }
 

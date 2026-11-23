@@ -44,10 +44,10 @@ static NSString * const kCatPkgCellID = @"CatPkgCell";
 {
     NSString *reason = nil;
     if ([[PackageQueue sharedQueue] canQueueIntent:intent forPackage:pkg reason:&reason]) return NO;
-    BOOL hideHomeBarReason = [reason containsString:@"Hide Home Bar"];
+    BOOL hideHomeBarReason = [reason containsString:@"隐藏 Home 条"];
     UIAlertController *alert =
-        [UIAlertController alertControllerWithTitle:(hideHomeBarReason ? @"Run Hide Home Bar Alone" : @"Cannot Queue Install")
-                                            message:reason ?: @"This package cannot be queued yet."
+        [UIAlertController alertControllerWithTitle:(hideHomeBarReason ? @"单独运行隐藏 Home 条" : @"无法加入安装队列")
+                                            message:reason ?: @"此软件包暂时无法加入队列。"
                                      preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
@@ -155,8 +155,8 @@ static NSString * const kCatPkgCellID = @"CatPkgCell";
 {
     (void)tableView;
     (void)section;
-    if ([self.categoryName isEqualToString:@"In Development"]) {
-        return @"These tweaks are visible for continuity only. Installing is disabled because they do not work yet; the unfinished app/source paths remain for anyone who wants to pick them up.";
+    if ([self.categoryName isEqualToString:@"开发中"]) {
+        return @"这些插件仅为延续性而可见。因尚未完成而禁用安装；未完成的应用/源码路径保留给想接手的人。";
     }
     return nil;
 }
@@ -181,11 +181,11 @@ static NSString * const kCatPkgCellID = @"CatPkgCell";
     config.textProperties.font = [UIFont systemFontOfSize:16.0 weight:UIFontWeightSemibold];
     if (disabledForInstall) config.textProperties.color = UIColor.secondaryLabelColor;
     if (pkg.isInstallDisabled && installed && pkg.installDisabledReason.length > 0 && pkg.shortDescription.length > 0) {
-        config.secondaryText = [NSString stringWithFormat:@"Installed, unsupported here · %@ · %@",
+        config.secondaryText = [NSString stringWithFormat:@"已安装，此处不支持 · %@ · %@",
                                 pkg.installDisabledReason,
                                 pkg.shortDescription];
     } else if (pkg.isInstallDisabled && installed && pkg.installDisabledReason.length > 0) {
-        config.secondaryText = [NSString stringWithFormat:@"Installed, unsupported here · %@",
+        config.secondaryText = [NSString stringWithFormat:@"已安装，此处不支持 · %@",
                                 pkg.installDisabledReason];
     } else {
         config.secondaryText = pkg.shortDescription;
@@ -228,7 +228,7 @@ static NSString * const kCatPkgCellID = @"CatPkgCell";
     }
     if (pkg.kind == PackageInstallKindRepoTweak) {
         if (intent != PackageQueueIntentNone) {
-            NSString *t = (intent == PackageQueueIntentInstall) ? @"WILL INSTALL" : @"WILL REMOVE";
+            NSString *t = (intent == PackageQueueIntentInstall) ? @"将安装" : @"将移除";
             return [self pillWithText:t background:[self.view.tintColor colorWithAlphaComponent:0.18] textColor:self.view.tintColor];
         }
         if (pkg.isInstalled)
@@ -239,7 +239,7 @@ static NSString * const kCatPkgCellID = @"CatPkgCell";
         }
     }
     if (intent != PackageQueueIntentNone) {
-        NSString *t = (intent == PackageQueueIntentInstall) ? @"WILL ACTIVATE" : @"WILL DEACTIVATE";
+        NSString *t = (intent == PackageQueueIntentInstall) ? @"将激活" : @"将停用";
         return [self pillWithText:t background:[self.view.tintColor colorWithAlphaComponent:0.18] textColor:self.view.tintColor];
     }
     if (pkg.isInstalled)
@@ -308,7 +308,7 @@ static NSString * const kCatPkgCellID = @"CatPkgCell";
     UIColor *color;
     NSString *symbol;
     if (intent != PackageQueueIntentNone) {
-        title = @"Cancel"; color = UIColor.systemGrayColor; symbol = @"xmark.circle";
+        title = @"取消"; color = UIColor.systemGrayColor; symbol = @"xmark.circle";
     } else if (pkg.kind == PackageInstallKindHideHomeBar) {
         title = pkg.isInstalled ? @"Restore" : @"Hide";
         color = pkg.isInstalled ? UIColor.systemRedColor : self.view.tintColor;
@@ -317,9 +317,9 @@ static NSString * const kCatPkgCellID = @"CatPkgCell";
         title = (pkg.kind == PackageInstallKindRepoTweak) ? @"Remove" : @"Deactivate";
         color = UIColor.systemRedColor; symbol = @"power";
     } else if ([self packageNeedsThemeBeforeInstall:pkg]) {
-        title = @"Select Theme"; color = self.view.tintColor; symbol = @"paintpalette";
+        title = @"选择主题"; color = self.view.tintColor; symbol = @"paintpalette";
     } else if ([self packageNeedsLiveWPVideoBeforeInstall:pkg]) {
-        title = @"Select Video"; color = self.view.tintColor; symbol = @"photo.badge.plus";
+        title = @"选择视频"; color = self.view.tintColor; symbol = @"photo.badge.plus";
     } else {
         title = (pkg.kind == PackageInstallKindRepoTweak) ? @"Install" : @"Activate";
         color = self.view.tintColor; symbol = @"play.circle";

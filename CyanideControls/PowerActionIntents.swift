@@ -15,7 +15,7 @@ import AppIntents
 
 struct RespringIntent: AppIntent {
     static let title: LocalizedStringResource = "Respring"
-    static let description = IntentDescription("Opens Cyanide to restart SpringBoard. Live tweaks stop first.")
+    static let description = IntentDescription("打开 Cyanide 以重启 SpringBoard。实时插件会先停止。")
     static let openAppWhenRun: Bool = true
 
     init() {}
@@ -23,14 +23,14 @@ struct RespringIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         try await CyanideLocationRequest.runURL("cyanide://respring",
-                                                timeoutMessage: "The respring is taking longer than expected.")
+                                                timeoutMessage: "重加载耗时比预期长。")
         return .result()
     }
 }
 
 struct RebootIntent: AppIntent {
     static let title: LocalizedStringResource = "Reboot"
-    static let description = IntentDescription("Opens Cyanide to reboot the device. Needs kernel access from an earlier Cyanide run.")
+    static let description = IntentDescription("打开 Cyanide 以重启设备。需要之前 Cyanide 运行留下的内核访问。")
     static let openAppWhenRun: Bool = true
 
     init() {}
@@ -38,7 +38,7 @@ struct RebootIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         try await CyanideLocationRequest.runURL("cyanide://reboot",
-                                                timeoutMessage: "The reboot is taking longer than expected.")
+                                                timeoutMessage: "重启耗时比预期长。")
         return .result()
     }
 }
@@ -48,8 +48,8 @@ struct RebootIntent: AppIntent {
 // in Shortcuts, or the Control Center button. The tweak must be on in
 // Cyanide, and kernel access from an earlier run must be live or parked.
 struct UnlockCarPlayIntent: AppIntent {
-    static let title: LocalizedStringResource = "CarPlay without Siri"
-    static let description = IntentDescription("Opens Cyanide to let CarPlay start while Siri is off, for the current connection.")
+    static let title: LocalizedStringResource = "无 Siri 使用 CarPlay"
+    static let description = IntentDescription("打开 Cyanide，让 CarPlay 在 Siri 关闭的情况下启动（仅当前连接）。")
     static let openAppWhenRun: Bool = true
 
     init() {}
@@ -57,7 +57,7 @@ struct UnlockCarPlayIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         try await CyanideLocationRequest.runURL("cyanide://carplay",
-                                                timeoutMessage: "CarPlay is taking longer than expected.")
+                                                timeoutMessage: "CarPlay 耗时比预期长。")
         return .result()
     }
 }

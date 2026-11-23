@@ -28,10 +28,10 @@
 NSString *fontow_target_title(FontOWTarget target)
 {
     switch (target) {
-        case FontOWTargetSystem: return @"System Font";
+        case FontOWTargetSystem: return @"系统字体";
         case FontOWTargetItalic: return @"Italic";
         case FontOWTargetMono:   return @"Monospaced";
-        case FontOWTargetClock:  return @"Lock Screen Clock";
+        case FontOWTargetClock:  return @"锁屏时钟";
         default:                 return @"?";
     }
 }
@@ -89,7 +89,7 @@ NSString *fontow_import(NSURL *url, NSString **errorOut)
 {
     NSString *ext = url.pathExtension.lowercaseString;
     if (![@[ @"ttf", @"otf", @"ttc" ] containsObject:ext]) {
-        if (errorOut) *errorOut = @"Pick a .ttf, .otf or .ttc font.";
+        if (errorOut) *errorOut = @"选择 .ttf、.otf 或 .ttc 字体。";
         return nil;
     }
     BOOL scoped = [url startAccessingSecurityScopedResource];
@@ -98,7 +98,7 @@ NSString *fontow_import(NSURL *url, NSString **errorOut)
     NSError *err = nil;
     BOOL ok = [NSFileManager.defaultManager copyItemAtURL:url toURL:[NSURL fileURLWithPath:dest] error:&err];
     if (scoped) [url stopAccessingSecurityScopedResource];
-    if (!ok && errorOut) *errorOut = err.localizedDescription ?: @"The font couldn't be copied.";
+    if (!ok && errorOut) *errorOut = err.localizedDescription ?: @"字体拷贝失败。";
     return ok ? dest : nil;
 }
 
@@ -165,20 +165,20 @@ static bool fontow_write_file_cache(NSString *path, NSData *data, NSString **why
     struct stat st;
     if (fd < 0 || fstat(fd, &st) != 0 || st.st_size < 1) {
         if (fd >= 0) close(fd);
-        *why = [NSString stringWithFormat:@"%@ can't be read.", path.lastPathComponent];
+        *why = [NSString stringWithFormat:@"无法读取 %@。", path.lastPathComponent];
         return false;
     }
     size_t size = (size_t)st.st_size;
     if (data.length > size) {
         close(fd);
-        *why = [NSString stringWithFormat:@"The font is %@, larger than the system's %@: it has to fit.",
+        *why = [NSString stringWithFormat:@"字体为 %@，大于系统的 %@：必须能放得下。",
                 [NSByteCountFormatter stringFromByteCount:(long long)data.length countStyle:NSByteCountFormatterCountStyleFile],
                 [NSByteCountFormatter stringFromByteCount:(long long)size countStyle:NSByteCountFormatterCountStyleFile]];
         return false;
     }
     uint8_t *map = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
     close(fd);
-    if (map == MAP_FAILED) { *why = @"The system font couldn't be mapped."; return false; }
+    if (map == MAP_FAILED) { *why = @"系统字体映射失败。"; return false; }
     size_t page = (size_t)getpagesize();
     volatile uint8_t sink = 0;
     for (size_t off = 0; off < size; off += page) sink ^= map[off];   // fault every page in
@@ -188,7 +188,7 @@ static bool fontow_write_file_cache(NSString *path, NSData *data, NSString **why
     struct VMEntryInfo e;
     bool ok = vmMap && fontow_entry_for(vmMap, (uint64_t)(uintptr_t)map, &e) && e.object &&
               e.end - e.start >= ((size + page - 1) & ~(page - 1));
-    if (!ok) *why = @"The font file's object wasn't found in Cyanide's memory map.";
+    if (!ok) *why = @"字体文件的对象未出现在 Cyanide 的内存映射中。";
     else printf("[FONTOW] %s: %zu bytes, entry 0x%llx-0x%llx object=0x%llx offset=0x%llx\n",
                 cpath, size, e.start, e.end, e.object, e.offset);
     const uint8_t *src = data.bytes;
@@ -214,7 +214,7 @@ static bool fontow_write_file_cache(NSString *path, NSData *data, NSString **why
             if (!pw.used) {
                 printf("[FONTOW] page at 0x%zx didn't map either\n", off + p);
                 *stoppedAt = off + p;
-                *why = @"A page of the font couldn't be mapped writable.";
+                *why = @"字体的一页无法映射为可写。";
                 ok = false;
                 break;
             }
@@ -240,7 +240,7 @@ static bool fontow_write_file_cache(NSString *path, NSData *data, NSString **why
     printf("[FONTOW] %s: wrote %zu of %zu bytes, read back head=%d tail=%d\n", cpath, data.length, size, headOK,
            readOK && tail == expectTail);
     if (!headOK || tail != expectTail) {
-        *why = @"The font was written, but a new reader doesn't see it. Restart the device to be safe.";
+        *why = @"字体已写入，但新的读取方看不到。为保险起见请重启设备。";
         return false;
     }
     return true;
@@ -276,7 +276,7 @@ static void fontow_restart_font_users(void)
 static bool fontow_is_apple_font(NSData *font, NSString *family)
 {
     NSString *f = [family stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@". "]];
-    bool apple = [f hasPrefix:@"SF"] || [f hasPrefix:@"San Francisco"] || [f hasPrefix:@"ADT"] || [f hasPrefix:@"New York"];
+    bool apple = [f hasPrefix:@"SF"] || [f hasPrefix:@"旧金山"] || [f hasPrefix:@"ADT"] || [f hasPrefix:@"纽约"];
     return apple && !fontpatch_is_adapted(font);
 }
 
@@ -284,10 +284,10 @@ bool fontow_apply(FontOWTarget target, NSString *fontPath, NSString **result)
 {
     __autoreleasing NSString *dummy = nil;
     if (!result) result = &dummy;
-    if (!kexploit_krw_ready()) { *result = @"Kernel access isn't active."; return false; }
+    if (!kexploit_krw_ready()) { *result = @"内核访问未激活。"; return false; }
     NSString *path = fontow_target_path(target);
     NSData *font = [NSData dataWithContentsOfFile:fontPath options:NSDataReadingMappedIfSafe error:nil];
-    if (!path || !font.length) { *result = @"The font couldn't be read."; return false; }
+    if (!path || !font.length) { *result = @"字体读取失败。"; return false; }
 
     // Back the original up while it still is the original -- and only if it
     // looks like Apple's: a replaced font must never become
@@ -298,20 +298,20 @@ bool fontow_apply(FontOWTarget target, NSString *fontPath, NSString **result)
         NSString *family = fontpatch_family_name(current);
         printf("[FONTOW] %s is now '%s'\n", path.UTF8String, (family ?: @"?").UTF8String);
         if (!fontow_is_apple_font(current, family)) {
-            *result = [NSString stringWithFormat:@"%@ is '%@'%@ right now, not Apple's font, so it isn't backed up as the original. Restart the device, then try again.",
-                       path.lastPathComponent, family ?: @"unknown", fontpatch_is_adapted(current) ? @" from Cyanide" : @""];
+            *result = [NSString stringWithFormat:@"%@ 当前是“%@”%@，不是 Apple 原字体，因此不会作为原件备份。请重启设备后再试。",
+                       path.lastPathComponent, family ?: @"unknown", fontpatch_is_adapted(current) ? @"（来自 Cyanide）" : @""];
             log_user("[FONTOW] %s\n", (*result).UTF8String);
             return false;
         }
         [NSFileManager.defaultManager removeItemAtPath:backup error:nil];
         NSError *err = nil;
         if (![NSFileManager.defaultManager copyItemAtPath:path toPath:backup error:&err]) {
-            *result = [NSString stringWithFormat:@"The original couldn't be backed up (%@); nothing was changed.",
+            *result = [NSString stringWithFormat:@"原件备份失败（%@）；未做任何更改。",
                        err.localizedDescription];
             return false;
         }
     } else if (![NSFileManager.defaultManager fileExistsAtPath:backup]) {
-        *result = @"The original's backup is missing; restart the device before replacing it again.";
+        *result = @"原件备份缺失；再次替换前请先重启设备。";
         return false;
     }
 
@@ -323,7 +323,7 @@ bool fontow_apply(FontOWTarget target, NSString *fontPath, NSString **result)
     NSData *originalForPatch = [NSData dataWithContentsOfFile:backup options:NSDataReadingMappedIfSafe error:nil];
     NSString *sourceError = nil;
     if (originalForPatch && !fontpatch_source_usable(originalForPatch, font, &sourceError)) {
-        *result = [NSString stringWithFormat:@"%@ can't be used as the %@: %@", fontPath.lastPathComponent,
+        *result = [NSString stringWithFormat:@"%@ 不能用作 %@：%@", fontPath.lastPathComponent,
                    fontow_target_title(target).lowercaseString, sourceError];
         log_user("[FONTOW] %s\n", (*result).UTF8String);
         return false;
@@ -332,7 +332,7 @@ bool fontow_apply(FontOWTarget target, NSString *fontPath, NSString **result)
         NSString *patchError = nil;
         NSData *adapted = fontpatch_adapt(originalForPatch, font, &patchError, &note);
         if (!adapted) {
-            *result = [NSString stringWithFormat:@"%@ can't be used as the %@: %@", fontPath.lastPathComponent,
+            *result = [NSString stringWithFormat:@"%@ 不能用作 %@：%@", fontPath.lastPathComponent,
                        fontow_target_title(target).lowercaseString, patchError];
             log_user("[FONTOW] %s\n", (*result).UTF8String);
             return false;
@@ -358,10 +358,10 @@ bool fontow_apply(FontOWTarget target, NSString *fontPath, NSString **result)
                       (original.length && (fontow_write_file_cache(path, original, &ignored, &undoStopped) ||
                                            (undoStopped && undoStopped >= stopped)));
         printf("[FONTOW] after the failure, original written back: %s\n", undone ? "yes" : "partly");
-        why = [why stringByAppendingString:undone ? @" Nothing was changed."
-                                                  : @" Restart the device before respringing, to be safe."];
+        why = [why stringByAppendingString:undone ? @" 未做任何更改。"
+                                                  : @" 为保险起见，请在重加载前重启设备。"];
     }
-    *result = ok ? [NSString stringWithFormat:@"%@ replaced with %@%@. Respring to see it; restart or Restore to undo.",
+    *result = ok ? [NSString stringWithFormat:@"已把 %@ 替换为 %@%@。重加载后可见；重启或“还原”可撤销。",
                     fontow_target_title(target), fontPath.lastPathComponent,
                     note ? [NSString stringWithFormat:@" (%@)", note] : @""]
                  : why;
@@ -373,8 +373,8 @@ bool fontow_restore(FontOWTarget target, NSString **result)
 {
     __autoreleasing NSString *dummy = nil;
     if (!result) result = &dummy;
-    if (!fontow_is_replaced(target)) { *result = @"It's the original already."; return true; }
-    if (!kexploit_krw_ready()) { *result = @"Kernel access isn't active."; return false; }
+    if (!fontow_is_replaced(target)) { *result = @"已经是原件了。"; return true; }
+    if (!kexploit_krw_ready()) { *result = @"内核访问未激活。"; return false; }
     NSData *original = [NSData dataWithContentsOfFile:fontow_backup_path(target) options:NSDataReadingMappedIfSafe error:nil];
     NSString *backupFamily = fontpatch_family_name(original);
     NSString *currentFamily = fontpatch_family_name([NSData dataWithContentsOfFile:fontow_target_path(target)
@@ -382,12 +382,12 @@ bool fontow_restore(FontOWTarget target, NSString **result)
     printf("[FONTOW] restore %s: file is '%s', backup is '%s'\n", fontow_target_path(target).UTF8String,
            (currentFamily ?: @"?").UTF8String, (backupFamily ?: @"?").UTF8String);
     if (!fontow_is_apple_font(original, backupFamily)) {
-        *result = [NSString stringWithFormat:@"The backup isn't Apple's font ('%@'). Restart the device: that always brings the original back.",
+        *result = [NSString stringWithFormat:@"备份不是 Apple 的字体（“%@”）。请重启设备：那总能带回原件。",
                    backupFamily ?: @"unknown"];
         return false;
     }
     if (original.length != fontow_target_size(target)) {
-        *result = @"The backup doesn't match the system's font; restart the device to restore it.";
+        *result = @"备份与系统字体不匹配；请重启设备以还原。";
         return false;
     }
     NSString *why = nil;
@@ -396,7 +396,7 @@ bool fontow_restore(FontOWTarget target, NSString **result)
         fontow_set_replaced(target, false);
         fontow_restart_font_users();
     }
-    *result = ok ? [NSString stringWithFormat:@"%@ restored. Respring to see it.", fontow_target_title(target)] : why;
+    *result = ok ? [NSString stringWithFormat:@"已还原 %@。重加载后可见。", fontow_target_title(target)] : why;
     log_user("[FONTOW] %s\n", (*result).UTF8String);
     return ok;
 }

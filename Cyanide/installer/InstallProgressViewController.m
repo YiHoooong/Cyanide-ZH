@@ -74,7 +74,7 @@
 
     self.statusLabel = [[UILabel alloc] init];
     self.statusLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    self.statusLabel.text = @"Running — stay here until complete.";
+    self.statusLabel.text = @"正在运行——完成前请留在本页。";
     self.statusLabel.font = [UIFont systemFontOfSize:13.5 weight:UIFontWeightRegular];
     self.statusLabel.textColor = [UIColor colorWithWhite:0.55 alpha:1.0];
     self.statusLabel.numberOfLines = 1;
@@ -88,7 +88,7 @@
     // both states without activating/deactivating constraints.
     self.retryButton = [UIButton buttonWithType:UIButtonTypeSystem];
     self.retryButton.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.retryButton setTitle:@"Run Again" forState:UIControlStateNormal];
+    [self.retryButton setTitle:@"再次运行" forState:UIControlStateNormal];
     self.retryButton.titleLabel.font = [UIFont systemFontOfSize:13.5 weight:UIFontWeightSemibold];
     [self.retryButton setTitleColor:[UIColor colorWithRed:0.40 green:0.78 blue:1.0 alpha:1.0]
                            forState:UIControlStateNormal];
@@ -162,7 +162,7 @@
 {
     if (self.completed) return;
     NSString *text = note.userInfo[kSettingsApplyStatusTextKey];
-    self.statusLabel.text = text.length ? text : @"Running — stay here until complete.";
+    self.statusLabel.text = text.length ? text : @"正在运行——完成前请留在本页。";
 }
 
 - (void)didReceiveCompleteNotification:(NSNotification *)note
@@ -176,7 +176,7 @@
     NSString *message = note.userInfo[kSettingsActionsDidCompleteMessageKey];
     self.statusLabel.text = message.length
         ? message
-        : (success ? @"All tweaks applied in-session." : @"Failed — check the log above.");
+        : (success ? @"所有插件已在会话内应用。" : @"Failed — check the log above.");
     self.statusLabel.font = [UIFont systemFontOfSize:13.5 weight:UIFontWeightSemibold];
     BOOL partial = success && [note.userInfo[kSettingsActionsDidCompletePartialKey] boolValue];
     self.statusLabel.textColor = partial
@@ -184,7 +184,7 @@
         : success
         ? [UIColor colorWithRed:0.38 green:0.90 blue:0.55 alpha:1.0]
         : [UIColor colorWithRed:1.0 green:0.38 blue:0.32 alpha:1.0];
-    self.title = partial ? @"Done with Warnings" : (success ? @"Complete" : @"Failed");
+    self.title = partial ? @"完成但有警告" : (success ? @"Complete" : @"Failed");
     self.hideOrDoneButton.title = @"Done";
     // Offer a one-tap retry only for the main chain run's KRW-acquire
     // failure — a clean miss that is fully re-entrant in the same boot
@@ -213,7 +213,7 @@
     self.completed = NO;
     self.title = @"Activity";
     self.hideOrDoneButton.title = @"Hide";
-    self.statusLabel.text = @"Running — stay here until complete.";
+    self.statusLabel.text = @"正在运行——完成前请留在本页。";
     self.statusLabel.font = [UIFont systemFontOfSize:13.5 weight:UIFontWeightRegular];
     self.statusLabel.textColor = [UIColor colorWithWhite:0.55 alpha:1.0];
     self.spinner.hidden = NO;

@@ -192,13 +192,13 @@ BOOL mg_tweak_available(const MGTweak *t, NSString **why)
 {
     NSString *reason = nil;
     if (t->minVersion > 0 && mg_system_version() + 0.001 < t->minVersion)
-        reason = [NSString stringWithFormat:@"Needs iOS %g or later.", t->minVersion];
+        reason = [NSString stringWithFormat:@"需要 iOS %g 或更高版本。", t->minVersion];
     else if ((t->flags & MGTweakFlagHomeButtonOnly) && !mg_has_home_button())
-        reason = @"Only on devices with a Home button.";
+        reason = @"仅限带主屏幕按钮的设备。";
     else if ((t->flags & MGTweakFlagIPadOnly) && !mg_is_ipad())
-        reason = @"Only on iPad.";
+        reason = @"仅限 iPad。";
     else if ((t->flags & MGTweakFlagIPhoneOnly) && mg_is_ipad())
-        reason = @"Only on iPhone.";
+        reason = @"仅限 iPhone。";
     if (why) *why = reason;
     return reason == nil;
 }
@@ -286,19 +286,19 @@ static BOOL mg_keep_backup(NSData *current)
 NSMutableDictionary *mg_load(NSString **error)
 {
     if (!darksword_prepare_var_rw()) {
-        if (error) *error = @"No access to /private/var (the sandbox could not be lifted).";
+        if (error) *error = @"无法访问 /private/var（沙盒未能解除）。";
         return nil;
     }
     NSError *readError = nil;
     NSData *data = [NSData dataWithContentsOfFile:MG_CACHE_PATH options:0 error:&readError];
     if (!data) {
-        if (error) *error = [NSString stringWithFormat:@"The MobileGestalt cache could not be read: %@",
-                             readError.localizedDescription ?: @"unknown error"];
+        if (error) *error = [NSString stringWithFormat:@"MobileGestalt 缓存读取失败：%@",
+                             readError.localizedDescription ?: @"未知错误"];
         return nil;
     }
     NSMutableDictionary *mg = (NSMutableDictionary *)mg_parse(data, NSPropertyListMutableContainersAndLeaves);
     if (![mg isKindOfClass:NSMutableDictionary.class]) {
-        if (error) *error = @"The MobileGestalt cache isn't in the expected format.";
+        if (error) *error = @"MobileGestalt 缓存不是预期格式。";
         return nil;
     }
     if (!mg_has_original_backup()) {
@@ -414,7 +414,7 @@ BOOL mg_tweak_set(NSMutableDictionary *mg, const MGTweak *t, BOOL on, NSString *
 {
     NSMutableDictionary *extra = mg[kMGCacheExtra];
     if (![extra isKindOfClass:NSMutableDictionary.class]) {
-        if (error) *error = @"The cache has no CacheExtra.";
+        if (error) *error = @"缓存中没有 CacheExtra。";
         return NO;
     }
     switch (t->kind) {
@@ -436,18 +436,18 @@ BOOL mg_tweak_set(NSMutableDictionary *mg, const MGTweak *t, BOOL on, NSString *
         case MGTweakKindInternal:
             for (int i = 0; kMGInternalKeys[i]; i++) {
                 if (!mg_cachedata_set(mg, kMGInternalKeys[i], on ? 1 : 0)) {
-                    if (error) *error = @"This iOS version keeps the internal flags somewhere Cyanide can't find.";
+                    if (error) *error = @"此 iOS 版本把内部标志存在 Cyanide 找不到的地方。";
                     return NO;
                 }
             }
             return YES;
         case MGTweakKindIPadUI:
             if (on && ![extra[kMGDeviceClassKey] isEqual:@"iPhone"]) {
-                if (error) *error = @"Only on iPhone.";
+                if (error) *error = @"仅限 iPhone。";
                 return NO;
             }
             if (!mg_cachedata_set(mg, kMGIPadUIClassKey, on ? 3 : 1)) {
-                if (error) *error = @"This iOS version keeps the device class somewhere Cyanide can't find.";
+                if (error) *error = @"此 iOS 版本把设备类别存在 Cyanide 找不到的地方。";
                 return NO;
             }
             for (int i = 0; kMGIPadUIKeys[i]; i++) {
@@ -458,7 +458,7 @@ BOOL mg_tweak_set(NSMutableDictionary *mg, const MGTweak *t, BOOL on, NSString *
         case MGTweakKindGreenTea: {
             int64_t g = 0, n = 0, og = 1, on0 = 0;
             if (!mg_greentea_read(mg, mg[kMGCacheData], &g, &n)) {
-                if (error) *error = @"This cache doesn't have the restriction flags in the expected form; nothing was changed.";
+                if (error) *error = @"此缓存不含预期形式的限制标志；未做任何更改。";
                 return NO;
             }
             // Off: the device's original values (same iOS build), else restricted.
@@ -467,7 +467,7 @@ BOOL mg_tweak_set(NSMutableDictionary *mg, const MGTweak *t, BOOL on, NSString *
                   mg_greentea_read(@{ kMGCacheExtra: @{} }, orig, &og, &on0))) { og = 1; on0 = 0; }
             if (!mg_cachedata_set(mg, kMGGreenTeaKey, on ? 0 : og) ||
                 !mg_cachedata_set(mg, kMGNotGreenTeaKey, on ? 1 : on0)) {
-                if (error) *error = @"The restriction flags could not be found in this cache.";
+                if (error) *error = @"此缓存中找不到限制标志。";
                 return NO;
             }
             return YES;
@@ -668,7 +668,7 @@ static bool mg_replace_file(NSData *data)
 static NSData *mg_checked_data(NSDictionary *plist, NSData *current, NSString **error)
 {
     if (![NSPropertyListSerialization propertyList:plist isValidForFormat:NSPropertyListBinaryFormat_v1_0]) {
-        if (error) *error = @"The edited cache isn't a valid property list.";
+        if (error) *error = @"编辑后的缓存不是有效的属性列表。";
         return nil;
     }
     NSData *data = [NSPropertyListSerialization dataWithPropertyList:plist format:NSPropertyListBinaryFormat_v1_0
@@ -676,11 +676,11 @@ static NSData *mg_checked_data(NSDictionary *plist, NSData *current, NSString **
     NSDictionary *back = mg_parse(data, NSPropertyListImmutable);
     NSDictionary *now = mg_parse(current, NSPropertyListImmutable);
     if (!back) {
-        if (error) *error = @"The edited cache failed validation; nothing was written.";
+        if (error) *error = @"编辑后的缓存校验失败；未写入任何内容。";
         return nil;
     }
     if (now && [now[kMGCacheData] length] != [back[kMGCacheData] length]) {
-        if (error) *error = @"The edited cache's CacheData has the wrong size; nothing was written.";
+        if (error) *error = @"编辑后缓存的 CacheData 大小错误；未写入任何内容。";
         return nil;
     }
     return data;
@@ -689,12 +689,12 @@ static NSData *mg_checked_data(NSDictionary *plist, NSData *current, NSString **
 static BOOL mg_write_data_checked(NSDictionary *plist, NSString **error)
 {
     if (!darksword_prepare_var_rw()) {
-        if (error) *error = @"No access to /private/var (the sandbox could not be lifted).";
+        if (error) *error = @"无法访问 /private/var（沙盒未能解除）。";
         return NO;
     }
     NSData *current = [NSData dataWithContentsOfFile:MG_CACHE_PATH];
     if (current.length == 0) {
-        if (error) *error = @"The current cache is empty or unreadable; nothing was written.";
+        if (error) *error = @"当前缓存为空或不可读；未写入任何内容。";
         return NO;
     }
     NSData *data = mg_checked_data(plist, current, error);
@@ -703,15 +703,15 @@ static BOOL mg_write_data_checked(NSDictionary *plist, NSString **error)
     // when keeping the original fails, so check here, where it matters: a
     // write without an original cannot be undone from the app.
     if (!mg_has_original_backup()) {
-        if (error) *error = @"The original cache could not be backed up, so nothing was written. Check free space and try again.";
+        if (error) *error = @"原缓存备份失败，未写入任何内容。请检查可用空间后重试。";
         return NO;
     }
     if (!mg_keep_backup(current)) {
-        if (error) *error = @"The current cache could not be backed up, so nothing was written. Check free space and try again.";
+        if (error) *error = @"当前缓存备份失败，未写入任何内容。请检查可用空间后重试。";
         return NO;
     }
     if (!mg_replace_file(data)) {
-        if (error) *error = @"Writing the cache failed. See the [MG] lines in the log.";
+        if (error) *error = @"缓存写入失败。请查看日志中的 [MG] 行。";
         return NO;
     }
     return YES;
@@ -726,7 +726,7 @@ BOOL mg_restore_original(NSString **error)
 {
     NSDictionary *original = mg_parse([NSData dataWithContentsOfFile:mg_original_backup_path()], NSPropertyListImmutable);
     if (!original) {
-        if (error) *error = @"There is no original backup.";
+        if (error) *error = @"没有原件备份。";
         return NO;
     }
     return mg_write_data_checked(original, error);

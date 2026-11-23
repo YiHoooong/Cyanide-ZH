@@ -22,7 +22,7 @@ struct RespringControl: ControlWidget {
             }
         }
         .displayName("Respring")
-        .description("Restarts SpringBoard through Cyanide.")
+        .description("通过 Cyanide 重启 SpringBoard。")
     }
 }
 
@@ -37,7 +37,7 @@ struct RebootControl: ControlWidget {
             }
         }
         .displayName("Reboot")
-        .description("Reboots the device through Cyanide. Needs kernel access from an earlier run.")
+        .description("通过 Cyanide 重启设备。需要之前运行留下的内核访问。")
     }
 }
 
@@ -51,7 +51,7 @@ struct CarPlayControl: ControlWidget {
                 Label("CarPlay", systemImage: "car.fill")
             }
         }
-        .displayName("CarPlay without Siri")
-        .description("Lets CarPlay start while Siri is off, for the current connection.")
+        .displayName("无 Siri 使用 CarPlay")
+        .description("让 CarPlay 在 Siri 关闭时启动（仅当前连接）。")
     }
 }

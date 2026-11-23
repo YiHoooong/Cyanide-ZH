@@ -145,13 +145,13 @@ static void sbl_set_error(NSError **error, NSInteger code, NSString *message)
     if (!error) return;
     *error = [NSError errorWithDomain:SBLArchiveErrorDomain
                                  code:code
-                             userInfo:@{NSLocalizedDescriptionKey: message ?: @"Archive extraction failed."}];
+                             userInfo:@{NSLocalizedDescriptionKey: message ?: @"归档解压失败。"}];
 }
 
 static BOOL sbl_cancelled(NSProgress *progress, NSError **error)
 {
     if (!progress || !progress.isCancelled) return NO;
-    sbl_set_error(error, 19, @"Archive extraction was cancelled.");
+    sbl_set_error(error, 19, @"归档解压已取消。");
     return YES;
 }
 
@@ -192,7 +192,7 @@ static NSData *sbl_inflate_data(NSData *input, NSUInteger outputSize, int window
 
     void *libz = dlopen("/usr/lib/libz.1.dylib", RTLD_LAZY);
     if (!libz) {
-        sbl_set_error(error, 10, @"libz is not available on this device.");
+        sbl_set_error(error, 10, @"此设备上没有 libz。");
         return nil;
     }
 
@@ -201,7 +201,7 @@ static NSData *sbl_inflate_data(NSData *input, NSUInteger outputSize, int window
     sbl_inflateEnd pEnd = (sbl_inflateEnd)dlsym(libz, "inflateEnd");
     if (!pInit || !pInflate || !pEnd) {
         dlclose(libz);
-        sbl_set_error(error, 11, @"Could not load zlib inflate symbols.");
+        sbl_set_error(error, 11, @"无法加载 zlib inflate 符号。");
         return nil;
     }
 
@@ -219,7 +219,7 @@ static NSData *sbl_inflate_data(NSData *input, NSUInteger outputSize, int window
     int rc = pInit(&stream, windowBits, ZLIB_VERSION, (int)sizeof(stream));
     if (rc != Z_OK) {
         dlclose(libz);
-        sbl_set_error(error, 12, @"Could not initialize zlib.");
+        sbl_set_error(error, 12, @"无法初始化 zlib。");
         return nil;
     }
     // Bounded slices, cancellation checked between them. Every Z_OK made
@@ -246,7 +246,7 @@ static NSData *sbl_inflate_data(NSData *input, NSUInteger outputSize, int window
 
     if (rc != Z_STREAM_END || stream.total_out != outputSize ||
         stream.total_in != input.length) {
-        sbl_set_error(error, 13, @"Compressed archive data could not be inflated.");
+        sbl_set_error(error, 13, @"压缩的归档数据无法解压。");
         return nil;
     }
     [out setLength:outputSize];
@@ -275,7 +275,7 @@ static NSData *sbl_decode_xz_data(NSData *input, NSProgress *progress, NSError *
 
     void *lib = sbl_dlopen_liblzma();
     if (!lib) {
-        sbl_set_error(error, 14, @"liblzma is not available on this device, so data.tar.xz cannot be imported.");
+        sbl_set_error(error, 14, @"此设备上没有 liblzma，无法导入 data.tar.xz。");
         return nil;
     }
 
@@ -285,7 +285,7 @@ static NSData *sbl_decode_xz_data(NSData *input, NSProgress *progress, NSError *
     sbl_lzma_end pEnd = (sbl_lzma_end)dlsym(lib, "lzma_end");
     if (!pDecoder || !pCode || !pEnd) {
         dlclose(lib);
-        sbl_set_error(error, 15, @"Could not load liblzma decoder symbols.");
+        sbl_set_error(error, 15, @"无法加载 liblzma 解码器符号。");
         return nil;
     }
 
@@ -297,7 +297,7 @@ static NSData *sbl_decode_xz_data(NSData *input, NSProgress *progress, NSError *
     sbl_lzma_ret rc = pDecoder(&stream, kSBLXZMemLimit, 0);
     if (rc != SBL_LZMA_OK) {
         dlclose(lib);
-        sbl_set_error(error, 16, @"Could not initialize xz decoder.");
+        sbl_set_error(error, 16, @"无法初始化 xz 解码器。");
         return nil;
     }
 
@@ -317,7 +317,7 @@ static NSData *sbl_decode_xz_data(NSData *input, NSProgress *progress, NSError *
             if (out.length + produced > kSBLMaxTotalBytes) {
                 pEnd(&stream);
                 dlclose(lib);
-                sbl_set_error(error, 18, @"data.tar.xz decompresses to more than 256 MB.");
+                sbl_set_error(error, 18, @"data.tar.xz 解压后超过 256 MB。");
                 return nil;
             }
             [out appendBytes:buffer length:produced];
@@ -328,7 +328,7 @@ static NSData *sbl_decode_xz_data(NSData *input, NSProgress *progress, NSError *
     dlclose(lib);
 
     if (rc != SBL_LZMA_STREAM_END) {
-        sbl_set_error(error, 17, @"data.tar.xz could not be decompressed.");
+        sbl_set_error(error, 17, @"data.tar.xz 解压失败。");
         return nil;
     }
     return out;
@@ -347,19 +347,19 @@ static BOOL sbl_create_directory_entry(NSString *path,
         return NO;
     }
     if (mkdir(path.fileSystemRepresentation, 0700) != 0 && errno != EEXIST) {
-        sbl_set_error(error, 55, @"Could not create an archive directory entry.");
+        sbl_set_error(error, 55, @"无法创建归档目录条目。");
         return NO;
     }
     struct stat st;
     if (lstat(path.fileSystemRepresentation, &st) != 0 || !S_ISDIR(st.st_mode)) {
-        sbl_set_error(error, 26, @"ZIP contains file/directory output aliases.");
+        sbl_set_error(error, 26, @"ZIP 包含文件/目录输出别名。");
         return NO;
     }
     NSString *identity = [NSString stringWithFormat:@"%llu:%llu",
                           (unsigned long long)st.st_dev,
                           (unsigned long long)st.st_ino];
     if ([explicitDirectories containsObject:identity]) {
-        sbl_set_error(error, 26, @"ZIP contains duplicate output directories.");
+        sbl_set_error(error, 26, @"ZIP 包含重复的输出目录。");
         return NO;
     }
     [explicitDirectories addObject:identity];
@@ -379,8 +379,8 @@ static BOOL sbl_write_file(NSData *data, NSString *path, NSError **error)
                   O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0600);
     if (fd < 0) {
         sbl_set_error(error, errno == EEXIST ? 26 : 55,
-                      errno == EEXIST ? @"Archive entries resolve to duplicate output paths."
-                                      : @"Could not create an extracted archive file.");
+                      errno == EEXIST ? @"归档条目解析到重复的输出路径。"
+                                      : @"无法创建解压出的归档文件。");
         return NO;
     }
     const uint8_t *bytes = data.bytes;
@@ -391,13 +391,13 @@ static BOOL sbl_write_file(NSData *data, NSString *path, NSError **error)
         if (written < 0 && errno == EINTR) continue;
         if (written <= 0) {
             close(fd);
-            sbl_set_error(error, 55, @"Could not write an extracted archive file.");
+            sbl_set_error(error, 55, @"无法写入解压出的归档文件。");
             return NO;
         }
         offset += (size_t)written;
     }
     if (close(fd) != 0) {
-        sbl_set_error(error, 55, @"Could not close an extracted archive file.");
+        sbl_set_error(error, 55, @"无法关闭解压出的归档文件。");
         return NO;
     }
     return YES;
@@ -410,13 +410,13 @@ static const uint16_t kSBLZipSupportedFlags = kSBLZipDataDescriptorFlag | kSBLZi
 static BOOL sbl_zip_flags_are_supported(uint16_t flags, uint16_t method, NSError **error)
 {
     if (flags & 1u) {
-        sbl_set_error(error, 27, @"Encrypted ZIP entries are not supported.");
+        sbl_set_error(error, 27, @"不支持加密的 ZIP 条目。");
         return NO;
     }
     // Bits 1/2 describe ordinary deflate compression levels, not encryption.
     uint16_t supported = kSBLZipSupportedFlags | (method == 8 ? 6u : 0u);
     if (flags & (uint16_t)~supported) {
-        sbl_set_error(error, 27, @"ZIP entry uses unsupported flags.");
+        sbl_set_error(error, 27, @"ZIP 条目使用了不支持的标志。");
         return NO;
     }
     return YES;
@@ -461,7 +461,7 @@ static BOOL sbl_extract_zip(NSData *zip, NSString *destination, NSProgress *prog
     const uint8_t *b = zip.bytes;
     NSUInteger len = zip.length;
     if (len < 22) {
-        sbl_set_error(error, 20, @"ZIP file is too small.");
+        sbl_set_error(error, 20, @"ZIP 文件太小。");
         return NO;
     }
 
@@ -474,7 +474,7 @@ static BOOL sbl_extract_zip(NSData *zip, NSString *destination, NSProgress *prog
         }
     }
     if (eocd < 0) {
-        sbl_set_error(error, 21, @"ZIP central directory was not found.");
+        sbl_set_error(error, 21, @"未找到 ZIP 中央目录。");
         return NO;
     }
 
@@ -489,7 +489,7 @@ static BOOL sbl_extract_zip(NSData *zip, NSString *destination, NSProgress *prog
         (NSUInteger)cdOffset > (NSUInteger)eocd ||
         (NSUInteger)cdSize > (NSUInteger)eocd - (NSUInteger)cdOffset ||
         (NSUInteger)cdOffset + (NSUInteger)cdSize != (NSUInteger)eocd) {
-        sbl_set_error(error, 23, @"ZIP64 archives are not supported or the central directory is outside the archive.");
+        sbl_set_error(error, 23, @"不支持 ZIP64 归档，或中央目录不在归档内。");
         return NO;
     }
     NSUInteger p = cdOffset;
@@ -501,7 +501,7 @@ static BOOL sbl_extract_zip(NSData *zip, NSString *destination, NSProgress *prog
     for (uint16_t i = 0; i < count; i++) {
         if (sbl_cancelled(progress, error)) return NO;
         if (len < 46 || p > len - 46 || sbl_le32(b + p) != 0x02014b50) {
-            sbl_set_error(error, 23, @"ZIP central directory is malformed.");
+            sbl_set_error(error, 23, @"ZIP 中央目录格式错误。");
             return NO;
         }
         uint16_t flags = sbl_le16(b + p + 8);
@@ -516,7 +516,7 @@ static BOOL sbl_extract_zip(NSData *zip, NSString *destination, NSProgress *prog
         if (!sbl_zip_flags_are_supported(flags, method, error)) return NO;
         if (nameLen > len - (p + 46) || extraLen > len - (p + 46 + nameLen) ||
             commentLen > len - (p + 46 + nameLen + extraLen)) {
-            sbl_set_error(error, 23, @"ZIP central directory is malformed.");
+            sbl_set_error(error, 23, @"ZIP 中央目录格式错误。");
             return NO;
         }
 
@@ -528,7 +528,7 @@ static BOOL sbl_extract_zip(NSData *zip, NSString *destination, NSProgress *prog
                                          encoding:NSISOLatin1StringEncoding];
         p += 46 + nameLen + extraLen + commentLen;
         if (!name) {
-            sbl_set_error(error, 23, @"ZIP entry name is not valid text.");
+            sbl_set_error(error, 23, @"ZIP 条目名称不是有效文本。");
             return NO;
         }
         BOOL isDirectory = [name hasSuffix:@"/"];
@@ -539,7 +539,7 @@ static BOOL sbl_extract_zip(NSData *zip, NSString *destination, NSProgress *prog
         // read. len >= 22 here, so len - 30 needs its own guard.
         NSUInteger lo = localOff;
         if (lo >= (NSUInteger)cdOffset || lo > len - 30 || sbl_le32(b + lo) != 0x04034b50) {
-            sbl_set_error(error, 23, @"ZIP local file header is malformed.");
+            sbl_set_error(error, 23, @"ZIP 本地文件头格式错误。");
             return NO;
         }
         uint16_t localFlags = sbl_le16(b + lo + 6);
@@ -551,59 +551,59 @@ static BOOL sbl_extract_zip(NSData *zip, NSString *destination, NSProgress *prog
         uint32_t localUncompSize = sbl_le32(b + lo + 22);
         if (!sbl_zip_flags_are_supported(localFlags, localMethod, error)) return NO;
         if (localFlags != flags || localMethod != method) {
-            sbl_set_error(error, 23, @"ZIP local and central headers disagree.");
+            sbl_set_error(error, 23, @"ZIP 本地头与中央目录头不一致。");
             return NO;
         }
         if (localNameLen > len - (lo + 30) || localExtraLen > len - (lo + 30 + localNameLen)) {
-            sbl_set_error(error, 23, @"ZIP local file header is malformed.");
+            sbl_set_error(error, 23, @"ZIP 本地文件头格式错误。");
             return NO;
         }
         if (localNameLen != nameLen ||
             memcmp(b + lo + 30, centralName, nameLen) != 0) {
-            sbl_set_error(error, 23, @"ZIP local and central filenames disagree.");
+            sbl_set_error(error, 23, @"ZIP 本地与中央文件名不一致。");
             return NO;
         }
         BOOL hasDescriptor = (flags & kSBLZipDataDescriptorFlag) != 0;
         if (!hasDescriptor &&
             (localCRC != expectedCRC || localCompSize != compSize || localUncompSize != uncompSize)) {
-            sbl_set_error(error, 23, @"ZIP local and central metadata disagree.");
+            sbl_set_error(error, 23, @"ZIP 本地与中央元数据不一致。");
             return NO;
         }
         if (hasDescriptor &&
             ((localCRC != 0 && localCRC != expectedCRC) ||
              (localCompSize != 0 && localCompSize != compSize) ||
              (localUncompSize != 0 && localUncompSize != uncompSize))) {
-            sbl_set_error(error, 23, @"ZIP local data-descriptor metadata disagrees.");
+            sbl_set_error(error, 23, @"ZIP 本地数据描述符元数据不一致。");
             return NO;
         }
         NSUInteger dataOff = lo + 30 + localNameLen + localExtraLen;
         if (dataOff > (NSUInteger)cdOffset || compSize > (NSUInteger)cdOffset - dataOff) {
-            sbl_set_error(error, 23, @"ZIP entry data is outside the archive.");
+            sbl_set_error(error, 23, @"ZIP 条目数据在归档之外。");
             return NO;
         }
         NSUInteger descriptorOff = dataOff + compSize;
         if (hasDescriptor &&
             !sbl_zip_descriptor_matches(b, descriptorOff, (NSUInteger)cdOffset,
                                         expectedCRC, compSize, uncompSize)) {
-            sbl_set_error(error, 23, @"ZIP data descriptor is malformed or disagrees with the central directory.");
+            sbl_set_error(error, 23, @"ZIP 数据描述符格式错误，或与中央目录不一致。");
             return NO;
         }
 
         NSString *outPath = sbl_safe_output_path(destination, name);
         if (!outPath) {
             sbl_set_error(error, 25,
-                          isDirectory ? @"ZIP contains an unsafe directory name."
-                                      : @"ZIP contains an unsafe entry path.");
+                          isDirectory ? @"ZIP 包含不安全的目录名。"
+                                      : @"ZIP 包含不安全的条目路径。");
             return NO;
         }
         if ([outputPaths containsObject:outPath]) {
-            sbl_set_error(error, 26, @"ZIP contains duplicate output paths.");
+            sbl_set_error(error, 26, @"ZIP 包含重复的输出路径。");
             return NO;
         }
         [outputPaths addObject:outPath];
 
         if (method != 0 && method != 8) {
-            sbl_set_error(error, 27, @"ZIP uses an unsupported compression method.");
+            sbl_set_error(error, 27, @"ZIP 使用了不支持的压缩方法。");
             return NO;
         }
         uint64_t entryBytes = (method == 0) ? compSize : uncompSize;
@@ -612,12 +612,12 @@ static BOOL sbl_extract_zip(NSData *zip, NSString *destination, NSProgress *prog
              (method == 0 && compSize != 0) ||
              (method == 8 && (uint64_t)compSize > kSBLMaxDirectoryCompressedBytes));
         if (invalidDirectoryPayload || (!isDirectory && entryBytes > kSBLMaxEntryBytes)) {
-            sbl_set_error(error, 24, @"ZIP directory payload or entry size is invalid.");
+            sbl_set_error(error, 24, @"ZIP 目录负载或条目大小无效。");
             return NO;
         }
         if (!isDirectory) {
             if (entryBytes > kSBLMaxEntryBytes || totalBytes > kSBLMaxTotalBytes - MIN(entryBytes, kSBLMaxTotalBytes)) {
-                sbl_set_error(error, 24, @"ZIP contains a file larger than 64 MB or more than 256 MB in total.");
+                sbl_set_error(error, 24, @"ZIP 包含大于 64 MB 的文件，或总量超过 256 MB。");
                 return NO;
             }
             totalBytes += entryBytes;
@@ -627,7 +627,7 @@ static BOOL sbl_extract_zip(NSData *zip, NSString *destination, NSProgress *prog
         NSData *fileData = nil;
         if (method == 0) {
             if (compSize != uncompSize) {
-                sbl_set_error(error, 23, @"ZIP stored entry has inconsistent sizes.");
+                sbl_set_error(error, 23, @"ZIP stored 条目的大小不一致。");
                 return NO;
             }
             fileData = payload;
@@ -636,7 +636,7 @@ static BOOL sbl_extract_zip(NSData *zip, NSString *destination, NSProgress *prog
             if (!fileData) return NO;
         }
         if (!sbl_zip_crc_matches(fileData, expectedCRC)) {
-            sbl_set_error(error, 28, @"ZIP entry CRC32 does not match its central directory.");
+            sbl_set_error(error, 28, @"ZIP 条目 CRC32 与中央目录不符。");
             return NO;
         }
         // A cancel that arrived during inflate must not still write this entry.
@@ -650,12 +650,12 @@ static BOOL sbl_extract_zip(NSData *zip, NSString *destination, NSProgress *prog
     }
 
     if (p != (NSUInteger)eocd) {
-        sbl_set_error(error, 23, @"ZIP central directory has trailing or missing entries.");
+        sbl_set_error(error, 23, @"ZIP 中央目录有多余或缺失的条目。");
         return NO;
     }
 
     if (extracted == 0) {
-        sbl_set_error(error, 22, @"ZIP did not contain extractable files.");
+        sbl_set_error(error, 22, @"ZIP 不含可解压的文件。");
         return NO;
     }
     return YES;
@@ -725,7 +725,7 @@ static BOOL sbl_extract_tar(NSData *tar, NSString *destination, NSProgress *prog
         // Same entry budget as the ZIP path: zero-byte entries never grow
         // totalBytes, so the byte cap alone does not bound the file count.
         if (++entries > SBLMaxImportFileCount) {
-            sbl_set_error(error, 34, @"TAR contains too many entries.");
+            sbl_set_error(error, 34, @"TAR 条目过多。");
             return NO;
         }
 
@@ -742,24 +742,24 @@ static BOOL sbl_extract_tar(NSData *tar, NSString *destination, NSProgress *prog
         NSUInteger dataOff = p + 512;
         // size <= len checked first so the round-up below cannot wrap.
         if (size > len - dataOff) {
-            sbl_set_error(error, 31, @"TAR entry runs past the end of the archive.");
+            sbl_set_error(error, 31, @"TAR 条目超出归档末尾。");
             return NO;
         }
         NSUInteger next = dataOff + ((size + 511) & ~((NSUInteger)511));
         if (next > len) {
-            sbl_set_error(error, 31, @"TAR entry runs past the end of the archive.");
+            sbl_set_error(error, 31, @"TAR 条目超出归档末尾。");
             return NO;
         }
 
         if (type == 'L' || type == 'x') {
             if (size > kSBLMaxTarPathRecordBytes) {
-                sbl_set_error(error, 33, @"TAR contains an over-long path record.");
+                sbl_set_error(error, 33, @"TAR 包含超长路径记录。");
                 return NO;
             }
             NSString *longName = type == 'L' ? sbl_tar_gnu_long_name(b + dataOff, size)
                                              : sbl_tar_pax_path(b + dataOff, size);
             if (type == 'L' && !longName) {
-                sbl_set_error(error, 33, @"TAR contains an unreadable long file name.");
+                sbl_set_error(error, 33, @"TAR 包含无法读取的长文件名。");
                 return NO;
             }
             if (longName) pendingLongName = longName;
@@ -775,13 +775,13 @@ static BOOL sbl_extract_tar(NSData *tar, NSString *destination, NSProgress *prog
 
         if (type == '0' || type == '\0') {
             if (size > kSBLMaxEntryBytes || totalBytes > kSBLMaxTotalBytes - size) {
-                sbl_set_error(error, 32, @"TAR contains a file larger than 64 MB or more than 256 MB in total.");
+                sbl_set_error(error, 32, @"TAR 包含大于 64 MB 的文件，或总量超过 256 MB。");
                 return NO;
             }
             totalBytes += size;
             NSString *outPath = sbl_safe_output_path(destination, name);
             if (!outPath) {
-                sbl_set_error(error, 33, @"TAR contains an unsafe entry path.");
+                sbl_set_error(error, 33, @"TAR 包含不安全的条目路径。");
                 return NO;
             }
             NSData *data = [NSData dataWithBytes:b + dataOff length:size];
@@ -798,7 +798,7 @@ static BOOL sbl_extract_tar(NSData *tar, NSString *destination, NSProgress *prog
             if (bare.length && ![bare isEqualToString:@"."]) {
                 NSString *outPath = sbl_safe_output_path(destination, name);
                 if (!outPath) {
-                    sbl_set_error(error, 33, @"TAR contains an unsafe directory path.");
+                    sbl_set_error(error, 33, @"TAR 包含不安全的目录路径。");
                     return NO;
                 }
                 if (!sbl_create_directory_entry(outPath, explicitDirectories, error)) return NO;
@@ -813,11 +813,11 @@ static BOOL sbl_extract_tar(NSData *tar, NSString *destination, NSProgress *prog
     }
 
     if (!ended) {
-        sbl_set_error(error, 31, @"TAR is truncated.");
+        sbl_set_error(error, 31, @"TAR 已截断。");
         return NO;
     }
     if (extracted == 0) {
-        sbl_set_error(error, 30, @"TAR did not contain extractable files.");
+        sbl_set_error(error, 30, @"TAR 不含可解压的文件。");
         return NO;
     }
     return YES;
@@ -856,14 +856,14 @@ static BOOL sbl_extract_deb(NSData *deb, NSString *destination, NSProgress *prog
     NSData *dataTarGz = sbl_data_for_ar_member(deb, @"data.tar.gz");
     if (dataTarGz) {
         if (dataTarGz.length < 4) {
-            sbl_set_error(error, 40, @"Invalid gzip payload in deb.");
+            sbl_set_error(error, 40, @"deb 中的 gzip 负载无效。");
             return NO;
         }
         const uint8_t *b = dataTarGz.bytes;
         uint32_t outSize = sbl_le32(b + dataTarGz.length - 4);
         // ISIZE sizes the output buffer up front, so bound it before allocating.
         if (outSize > kSBLMaxTotalBytes) {
-            sbl_set_error(error, 42, @"data.tar.gz decompresses to more than 256 MB.");
+            sbl_set_error(error, 42, @"data.tar.gz 解压后超过 256 MB。");
             return NO;
         }
         NSData *tar = sbl_inflate_data(dataTarGz, outSize, MAX_WBITS + 16, progress, error);
@@ -876,7 +876,7 @@ static BOOL sbl_extract_deb(NSData *deb, NSString *destination, NSProgress *prog
         return tar ? sbl_extract_tar(tar, destination, progress, error) : NO;
     }
 
-    sbl_set_error(error, 41, @"This deb does not contain data.tar, data.tar.gz, or data.tar.xz. data.tar.zst is not supported yet.");
+    sbl_set_error(error, 41, @"此 deb 不含 data.tar、data.tar.gz 或 data.tar.xz。尚不支持 data.tar.zst。");
     return NO;
 }
 
@@ -893,7 +893,7 @@ static NSString *sbl_create_staging_directory(NSString *parent, NSString *destin
         if (mkdir(path.fileSystemRepresentation, 0700) == 0) return path;
         if (errno != EEXIST) break;
     }
-    sbl_set_error(error, 53, @"The archive staging directory could not be created exclusively.");
+    sbl_set_error(error, 53, @"无法独占创建归档暂存目录。");
     return nil;
 }
 
@@ -905,7 +905,7 @@ BOOL SBLExtractArchiveToDirectoryWithProgress(NSURL *url, NSString *destination,
     // The destination is committed only on success, so it must be new
     // or an empty directory: never clear a real folder (review F-35).
     if (destination.length == 0) {
-        sbl_set_error(error, 53, @"No extraction destination was given.");
+        sbl_set_error(error, 53, @"未指定解压目标。");
         return NO;
     }
     struct stat destStat;
@@ -913,7 +913,7 @@ BOOL SBLExtractArchiveToDirectoryWithProgress(NSURL *url, NSString *destination,
         NSArray *contents = S_ISDIR(destStat.st_mode)
             ? [fm contentsOfDirectoryAtPath:destination error:nil] : nil;
         if (!contents || contents.count > 0) {
-            sbl_set_error(error, 53, @"The extraction destination already exists and is not empty.");
+            sbl_set_error(error, 53, @"解压目标已存在且非空。");
             return NO;
         }
     }
@@ -921,23 +921,23 @@ BOOL SBLExtractArchiveToDirectoryWithProgress(NSURL *url, NSString *destination,
     // reading: the decompressed and entry bounds below only apply once the
     // archive is in memory, so its own size must never exceed the cap there.
     if (!url.isFileURL) {
-        sbl_set_error(error, 54, @"Only local archive files can be imported.");
+        sbl_set_error(error, 54, @"只能导入本地归档文件。");
         return NO;
     }
     int fd = open(url.fileSystemRepresentation, O_RDONLY | O_NOFOLLOW);
     if (fd < 0) {
-        sbl_set_error(error, 51, @"The selected item is not a readable archive file.");
+        sbl_set_error(error, 51, @"所选项目不是可读取的归档文件。");
         return NO;
     }
     struct stat inStat;
     if (fstat(fd, &inStat) != 0 || !S_ISREG(inStat.st_mode)) {
         close(fd);
-        sbl_set_error(error, 51, @"The selected item is not a regular archive file.");
+        sbl_set_error(error, 51, @"所选项目不是常规归档文件。");
         return NO;
     }
     if ((unsigned long long)inStat.st_size > SBLMaxArchiveInputBytes) {
         close(fd);
-        sbl_set_error(error, 52, @"The archive is larger than 256 MB.");
+        sbl_set_error(error, 52, @"归档大于 256 MB。");
         return NO;
     }
     NSMutableData *data = [NSMutableData dataWithCapacity:(NSUInteger)inStat.st_size];
@@ -953,11 +953,11 @@ BOOL SBLExtractArchiveToDirectoryWithProgress(NSURL *url, NSString *destination,
     }
     close(fd);
     if (tooLarge) {
-        sbl_set_error(error, 52, @"The archive is larger than 256 MB.");
+        sbl_set_error(error, 52, @"归档大于 256 MB。");
         return NO;
     }
     if (readFailed || data.length == 0) {
-        sbl_set_error(error, 51, @"The archive could not be read.");
+        sbl_set_error(error, 51, @"归档读取失败。");
         return NO;
     }
 
@@ -968,7 +968,7 @@ BOOL SBLExtractArchiveToDirectoryWithProgress(NSURL *url, NSString *destination,
     BOOL isZip = [ext isEqualToString:@"zip"] || looksZip;
     BOOL isDeb = [ext isEqualToString:@"deb"] || looksDeb;
     if (!isZip && !isDeb) {
-        sbl_set_error(error, 50, @"Unsupported archive type. Choose a folder, .zip, or .deb.");
+        sbl_set_error(error, 50, @"不支持的归档类型。请选择目录、.zip 或 .deb。");
         return NO;
     }
 
@@ -1000,7 +1000,7 @@ BOOL SBLExtractArchiveToDirectoryWithProgress(NSURL *url, NSString *destination,
     }
     if (rmdir(destination.fileSystemRepresentation) != 0 && errno != ENOENT) {
         [fm removeItemAtPath:staging error:nil];
-        sbl_set_error(error, 53, @"The extraction destination is no longer empty; refusing to clear it.");
+        sbl_set_error(error, 53, @"解压目标已不再为空；拒绝清空它。");
         return NO;
     }
     if (sbl_cancelled(progress, error)) {
@@ -1009,7 +1009,7 @@ BOOL SBLExtractArchiveToDirectoryWithProgress(NSURL *url, NSString *destination,
     }
     if (renamex_np(staging.fileSystemRepresentation, destination.fileSystemRepresentation, RENAME_EXCL) != 0) {
         [fm removeItemAtPath:staging error:nil];
-        sbl_set_error(error, 53, @"The extracted archive could not be committed.");
+        sbl_set_error(error, 53, @"解压出的归档无法提交。");
         return NO;
     }
     return YES;

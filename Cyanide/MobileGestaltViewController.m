@@ -14,7 +14,7 @@
 #import "tweaks/mobilegestalt.h"
 
 static NSString * const kMGCredit =
-    @"Ported from lara by rooootdev. Keys from Nugget by leminlimez and SparseBox by khanhduytran0; China restrictions from GestaltX by huamidev.";
+    @"由 rooootdev 从 lara 移植。键值来自 leminlimez 的 Nugget 与 khanhduytran0 的 SparseBox；中国区限制来自 huamidev 的 GestaltX。";
 
 typedef NS_ENUM(NSInteger, MGRowKind) {
     MGRowApply,
@@ -96,7 +96,7 @@ static const MGModel kMGModels[] = {
     NSMutableArray *artwork = [NSMutableArray array];
     if (!self.isPad) [artwork addObject:@[@(MGRowSubtype), @0]];
     [artwork addObject:@[@(MGRowDeviceName), @0]];
-    [sections addObject:@{ @"title": @"Device Artwork", @"rows": artwork }];
+    [sections addObject:@{ @"title": @"设备外观素材", @"rows": artwork }];
 
     const MGTweak *t = mg_tweaks();
     NSString *current = nil;
@@ -139,7 +139,7 @@ static const MGModel kMGModels[] = {
             });
             return;
         }
-        me.status = ok ? nil : (message ?: @"It didn't work. Check the log.");
+        me.status = ok ? nil : (message ?: @"未生效，请查看日志。");
         if (done) done(ok, message);
         [me.tableView reloadData];
     });
@@ -162,10 +162,10 @@ static const MGModel kMGModels[] = {
 - (void)apply
 {
     if (!self.mg || !self.dirty) return;
-    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"Apply Changes?"
-        message:@"The MobileGestalt cache is rewritten. The file as it is now is backed up first, and Restore Original puts the untouched cache back."
+    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"要应用更改吗？"
+        message:@"MobileGestalt 缓存将被重写。当前文件会先备份，“还原原始”会把未修改的缓存放回。"
         preferredStyle:UIAlertControllerStyleAlert];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     __weak typeof(self) weakSelf = self;
     [ac addAction:[UIAlertAction actionWithTitle:@"Apply" style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) {
         NSDictionary *snapshot = [weakSelf.mg copy];
@@ -177,8 +177,8 @@ static const MGModel kMGModels[] = {
             typeof(self) me = weakSelf;
             if (!ok || !me) return;
             me.dirty = NO;
-            settings_present_respring_prompt(me, @"MobileGestalt Saved",
-                                             @"Respring to see the changes. Some only show after a restart.");
+            settings_present_respring_prompt(me, @"MobileGestalt 已保存",
+                                             @"重加载后可见变化。部分更改需重启后才显示。");
         }];
     }]];
     [self presentViewController:ac animated:YES completion:nil];
@@ -187,10 +187,10 @@ static const MGModel kMGModels[] = {
 - (void)restoreOriginal
 {
     if (!mg_has_original_backup()) return;
-    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"Restore Original?"
-        message:@"Puts back the MobileGestalt cache as it was before Cyanide first changed it. Every tweak on this page is undone."
+    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"要还原原始吗？"
+        message:@"把 MobileGestalt 缓存恢复为 Cyanide 首次修改之前的样子。本页所有更改都会被撤销。"
         preferredStyle:UIAlertControllerStyleAlert];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     __weak typeof(self) weakSelf = self;
     [ac addAction:[UIAlertAction actionWithTitle:@"Restore" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *a) {
         __block NSMutableDictionary *reloaded = nil;
@@ -204,8 +204,8 @@ static const MGModel kMGModels[] = {
             if (!ok || !me) return;
             if (reloaded) me.mg = reloaded;
             me.dirty = NO;
-            settings_present_respring_prompt(me, @"Original Restored",
-                                             @"Respring to see it. Some changes only go away after a restart.");
+            settings_present_respring_prompt(me, @"已还原原始",
+                                             @"重加载后可见。部分更改只有重启后才会消失。");
         }];
     }]];
     [self presentViewController:ac animated:YES completion:nil];
@@ -241,8 +241,8 @@ static const MGModel kMGModels[] = {
     NSMutableArray *parts = [NSMutableArray array];
     if (section == 0) {
         if (self.status) [parts addObject:self.status];
-        else if (self.dirty) [parts addObject:@"Changes are not saved yet. Tap Apply Changes."];
-        [parts addObject:@"Changes what iOS believes this device can do, by editing the MobileGestalt cache. A wrong value can break features or, in rare cases, stop the device from starting until it is restored. Every write is backed up (Documents/MobileGestalt), and Restore Original undoes everything."];
+        else if (self.dirty) [parts addObject:@"更改尚未保存。请点按“应用更改”。"];
+        [parts addObject:@"通过编辑 MobileGestalt 缓存改变 iOS 对此设备能力的认知。错误的值可能损坏功能，极少数情况下会导致设备无法启动，直到还原为止。每次写入都有备份（Documents/MobileGestalt），“还原原始”可撤销全部更改。"];
     }
     if (section == [self numberOfSectionsInTableView:tableView] - 1) [parts addObject:kMGCredit];
     return parts.count ? [parts componentsJoinedByString:@"\n\n"] : nil;
@@ -264,47 +264,47 @@ static const MGModel kMGModels[] = {
 
     switch (kind) {
         case MGRowApply:
-            c.text = @"Apply Changes";
+            c.text = @"应用更改";
             c.textProperties.color = self.dirty && !self.busy ? UIColor.systemBlueColor : UIColor.secondaryLabelColor;
             break;
         case MGRowDiscard:
-            c.text = @"Discard Changes";
+            c.text = @"放弃更改";
             c.textProperties.color = self.dirty && !self.busy ? UIColor.systemBlueColor : UIColor.secondaryLabelColor;
             break;
         case MGRowRestore:
-            c.text = @"Restore Original…";
+            c.text = @"还原原始…";
             c.textProperties.color = mg_has_original_backup() && !self.busy ? UIColor.systemRedColor
                                                                             : UIColor.secondaryLabelColor;
             break;
         case MGRowAllKeys:
-            c.text = @"All Keys";
+            c.text = @"全部键";
             c.textProperties.color = action;
             cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
             break;
         case MGRowSubtype: {
-            c.text = @"Screen Shape";
+            c.text = @"屏幕形状";
             c.image = [UIImage systemImageNamed:@"iphone"];
             NSNumber *now = mg_artwork_subtype(self.mg), *orig = mg_original_artwork_subtype();
-            c.secondaryText = [now isEqual:orig] || !now ? [NSString stringWithFormat:@"Original (%@)", orig ?: now ?: @"?"]
+            c.secondaryText = [now isEqual:orig] || !now ? [NSString stringWithFormat:@"原始（%@）", orig ?: now ?: @"?"]
                                                         : [self subtypeTitle:now.intValue];
             cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
             break;
         }
         case MGRowDeviceName: {
-            c.text = @"Model Name";
+            c.text = @"机型名称";
             c.image = [UIImage systemImageNamed:@"character.cursor.ibeam"];
             NSString *name = mg_device_name(self.mg);
             BOOL custom = name && ![name isEqualToString:mg_original_device_name()];
-            c.secondaryText = custom ? name : [NSString stringWithFormat:@"Original (%@)", name ?: mg_machine_name()];
+            c.secondaryText = custom ? name : [NSString stringWithFormat:@"原始（%@）", name ?: mg_machine_name()];
             cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
             break;
         }
         case MGRowProductType: {
-            c.text = @"Spoof Device Model";
+            c.text = @"伪装设备机型";
             c.image = [UIImage systemImageNamed:@"theatermasks"];
             NSString *type = mg_product_type(self.mg);
             c.secondaryText = [type isEqualToString:mg_original_product_type()]
-                ? [NSString stringWithFormat:@"Original (%@)", type] : [self modelTitle:type];
+                ? [NSString stringWithFormat:@"原始（%@）", type] : [self modelTitle:type];
             cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
             break;
         }
@@ -315,7 +315,7 @@ static const MGModel kMGModels[] = {
             NSString *why = nil;
             BOOL available = mg_tweak_available(t, &why);
             BOOL builtin = mg_tweak_builtin(t);
-            NSString *builtinText = t->kind == MGTweakKindGreenTea ? @"Not restricted on this device." : @"Built into this device.";
+            NSString *builtinText = t->kind == MGTweakKindGreenTea ? @"此设备未受限。" : @"此设备内置。";
             c.secondaryText = !available ? why : (builtin ? builtinText : @(t->detail));
             UISwitch *sw = [UISwitch new];
             sw.on = mg_tweak_is_on(self.mg, t);
@@ -356,7 +356,7 @@ static const MGModel kMGModels[] = {
         if (!me) return;
         NSString *error = nil;
         if (!mg_tweak_set(me.mg, t, on, &error)) {
-            me.status = error ?: @"That didn't work.";
+            me.status = error ?: @"没有生效。";
             [me.tableView reloadData];
             return;
         }
@@ -366,10 +366,10 @@ static const MGModel kMGModels[] = {
     if (on && (t->flags & MGTweakFlagConfirm) && t->warning) {
         UIAlertController *ac = [UIAlertController alertControllerWithTitle:@(t->title) message:@(t->warning)
                                                              preferredStyle:UIAlertControllerStyleAlert];
-        [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *a) {
+        [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction *a) {
             [sw setOn:NO animated:YES];
         }]];
-        [ac addAction:[UIAlertAction actionWithTitle:@"Turn On" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *a) {
+        [ac addAction:[UIAlertAction actionWithTitle:@"打开" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *a) {
             set();
         }]];
         [self presentViewController:ac animated:YES completion:nil];
@@ -399,7 +399,7 @@ static const MGModel kMGModels[] = {
 
 - (void)presentSheet:(UIAlertController *)sheet from:(UIView *)source
 {
-    [sheet addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     sheet.popoverPresentationController.sourceView = source ?: self.view;
     sheet.popoverPresentationController.sourceRect = (source ?: self.view).bounds;
     [self presentViewController:sheet animated:YES completion:nil];
@@ -407,12 +407,12 @@ static const MGModel kMGModels[] = {
 
 - (void)pickSubtypeFrom:(UIView *)source
 {
-    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"Screen Shape"
-        message:@"The device artwork iOS uses for the screen corners, the Dynamic Island and gestures. Respring to see it."
+    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"屏幕形状"
+        message:@"iOS 用于屏幕圆角、灵动岛和手势的设备外观素材。重加载后可见。"
         preferredStyle:UIAlertControllerStyleActionSheet];
     __weak typeof(self) weakSelf = self;
     NSNumber *orig = mg_original_artwork_subtype();
-    [sheet addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"Original (%@)", orig ?: @"?"]
+    [sheet addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"原始（%@）", orig ?: @"?"]
                                               style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) {
         mg_set_artwork_subtype(weakSelf.mg, orig);
         [weakSelf changed];
@@ -430,11 +430,11 @@ static const MGModel kMGModels[] = {
 
 - (void)pickModelFrom:(UIView *)source
 {
-    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"Spoof Device Model"
-        message:@"Only for downloading Apple Intelligence models. It can break Face ID. If you switch back and want to keep Apple Intelligence, don't open Apple Intelligence & Siri in Settings again."
+    UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"伪装设备机型"
+        message:@"仅用于下载 Apple Intelligence 模型。可能损坏 Face ID。如果切回后又想保留 Apple Intelligence，请不要再打开设置中的 Apple Intelligence 与 Siri。"
         preferredStyle:UIAlertControllerStyleActionSheet];
     __weak typeof(self) weakSelf = self;
-    [sheet addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"Original (%@)", mg_original_product_type()]
+    [sheet addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"原始（%@）", mg_original_product_type()]
                                               style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) {
         mg_set_product_type(weakSelf.mg, nil);
         [weakSelf changed];
@@ -454,17 +454,17 @@ static const MGModel kMGModels[] = {
 
 - (void)editDeviceName
 {
-    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"Model Name"
-        message:@"The model name shown in Settings → General → About."
+    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"机型名称"
+        message:@"设置 → 通用 → 关于本机 中显示的机型名称。"
         preferredStyle:UIAlertControllerStyleAlert];
     [ac addTextFieldWithConfigurationHandler:^(UITextField *f) {
         f.text = mg_device_name(self.mg);
-        f.placeholder = mg_original_device_name() ?: @"Model name";
+        f.placeholder = mg_original_device_name() ?: @"机型名称";
         f.clearButtonMode = UITextFieldViewModeAlways;
     }];
     __weak typeof(self) weakSelf = self;
-    [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Use Original" style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) {
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"使用原始" style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) {
         mg_set_device_name(weakSelf.mg, nil);
         [weakSelf changed];
     }]];
@@ -495,7 +495,7 @@ static const MGModel kMGModels[] = {
         _mg = [mg copy];
         _extra = [mg[@"CacheExtra"] isKindOfClass:NSDictionary.class] ? mg[@"CacheExtra"] : @{};
         _keys = [_extra.allKeys sortedArrayUsingSelector:@selector(compare:)];
-        self.title = @"All Keys";
+        self.title = @"全部键";
     }
     return self;
 }
@@ -513,14 +513,14 @@ static const MGModel kMGModels[] = {
     UIAlertController *sheet = [UIAlertController alertControllerWithTitle:@"Export" message:nil
                                                             preferredStyle:UIAlertControllerStyleActionSheet];
     __weak typeof(self) weakSelf = self;
-    [sheet addAction:[UIAlertAction actionWithTitle:@"Current (with unsaved changes)" style:UIAlertActionStyleDefault
+    [sheet addAction:[UIAlertAction actionWithTitle:@"当前（含未保存更改）" style:UIAlertActionStyleDefault
                                             handler:^(UIAlertAction *a) { [weakSelf shareCurrentFrom:sender]; }]];
     if (mg_has_original_backup()) {
-        [sheet addAction:[UIAlertAction actionWithTitle:@"Original Backup" style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) {
+        [sheet addAction:[UIAlertAction actionWithTitle:@"原始备份" style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) {
             [weakSelf shareURL:[NSURL fileURLWithPath:mg_original_backup_path()] from:sender];
         }]];
     }
-    [sheet addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [sheet addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     sheet.popoverPresentationController.barButtonItem = sender;
     [self presentViewController:sheet animated:YES completion:nil];
 }
@@ -548,7 +548,7 @@ static const MGModel kMGModels[] = {
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section
 {
-    return [NSString stringWithFormat:@"%lu keys in CacheExtra. Long-press a row to copy it. %@",
+    return [NSString stringWithFormat:@"CacheExtra 中有 %lu 个键。长按某行即可拷贝。%@",
             (unsigned long)_keys.count, kMGCredit];
 }
 
@@ -556,7 +556,7 @@ static const MGModel kMGModels[] = {
 {
     if ([value isKindOfClass:NSString.class]) return value;
     if ([value isKindOfClass:NSNumber.class]) return [value stringValue];
-    if ([value isKindOfClass:NSData.class]) return [NSString stringWithFormat:@"<%lu bytes>", (unsigned long)[value length]];
+    if ([value isKindOfClass:NSData.class]) return [NSString stringWithFormat:@"<%lu 字节>", (unsigned long)[value length]];
     NSString *d = [[value description] stringByReplacingOccurrencesOfString:@"\n" withString:@" "];
     while ([d containsString:@"  "]) d = [d stringByReplacingOccurrencesOfString:@"  " withString:@" "];
     return d;
@@ -586,9 +586,9 @@ static const MGModel kMGModels[] = {
     return [UIContextMenuConfiguration configurationWithIdentifier:nil previewProvider:nil
         actionProvider:^UIMenu *(NSArray<UIMenuElement *> *suggested) {
         return [UIMenu menuWithChildren:@[
-            [UIAction actionWithTitle:@"Copy Key" image:[UIImage systemImageNamed:@"key"] identifier:nil
+            [UIAction actionWithTitle:@"拷贝键" image:[UIImage systemImageNamed:@"key"] identifier:nil
                               handler:^(UIAction *a) { UIPasteboard.generalPasteboard.string = key; }],
-            [UIAction actionWithTitle:@"Copy Value" image:[UIImage systemImageNamed:@"doc.on.doc"] identifier:nil
+            [UIAction actionWithTitle:@"拷贝值" image:[UIImage systemImageNamed:@"doc.on.doc"] identifier:nil
                               handler:^(UIAction *a) { UIPasteboard.generalPasteboard.string = value; }],
         ]];
     }];

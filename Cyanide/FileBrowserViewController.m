@@ -241,11 +241,11 @@ FBSaveResult filebrowser_save(NSString *path, NSData *data, FBFileIdentity expec
     // Checked again here, at execution time: a save can wait in the file
     // queue behind other work while Changes get locked.
     if (!filebrowser_write_enabled()) {
-        if (message) *message = @"Changes are locked. Unlock them in the File Browser first.";
+        if (message) *message = @"更改已锁定。请先在文件浏览器中解锁。";
         return FBSaveFailed;
     }
     if (data.length > kFBMaxBackupBytes) {
-        if (message) *message = @"The new file is too large for a durable recovery preimage.";
+        if (message) *message = @"新文件太大，无法用于可靠的恢复预映像。";
         return FBSaveFailed;
     }
     // Classify BEFORE opening (opening a device node can itself have side
@@ -258,40 +258,40 @@ FBSaveResult filebrowser_save(NSString *path, NSData *data, FBFileIdentity expec
     struct stat pre;
     if (!fsPath || stat(fsPath, &pre) != 0) {
         int serr = fsPath ? errno : EINVAL;
-        if (message) *message = [NSString stringWithFormat:@"The file can't be opened for writing: %s.", strerror(serr)];
+        if (message) *message = [NSString stringWithFormat:@"文件无法以写入方式打开：%s。", strerror(serr)];
         return FBSaveFailed;
     }
     if (!S_ISREG(pre.st_mode)) {
-        if (message) *message = @"Not a regular file.";
+        if (message) *message = @"不是常规文件。";
         return FBSaveFailed;
     }
     int fd = open(fsPath, O_RDWR | O_NONBLOCK | O_CLOEXEC);
     if (fd < 0) {
-        if (message) *message = [NSString stringWithFormat:@"The file can't be opened for writing: %s.", strerror(errno)];
+        if (message) *message = [NSString stringWithFormat:@"文件无法以写入方式打开：%s。", strerror(errno)];
         return FBSaveFailed;
     }
     struct stat st;
     if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode)) {
         close(fd);
-        if (message) *message = @"Not a regular file.";
+        if (message) *message = @"不是常规文件。";
         return FBSaveFailed;
     }
     if (st.st_dev != pre.st_dev || st.st_ino != pre.st_ino) {
         close(fd);
-        if (message) *message = @"The file was replaced while it was being opened. Nothing was changed; reload and try again.";
+        if (message) *message = @"文件在打开期间被替换。未做任何更改；请重新加载后再试。";
         return FBSaveFailed;
     }
     int oflags = fcntl(fd, F_GETFL);
     if (oflags < 0 || fcntl(fd, F_SETFL, oflags & ~O_NONBLOCK) < 0) {
         int ferr = errno;
         close(fd);
-        if (message) *message = [NSString stringWithFormat:@"The file can't be opened for writing: %s.", strerror(ferr)];
+        if (message) *message = [NSString stringWithFormat:@"文件无法以写入方式打开：%s。", strerror(ferr)];
         return FBSaveFailed;
     }
     if (flock(fd, LOCK_EX | LOCK_NB) != 0) {
         int lockError = errno;
         close(fd);
-        if (message) *message = [NSString stringWithFormat:@"The file is busy or could not be locked: %s. Nothing was changed.",
+        if (message) *message = [NSString stringWithFormat:@"文件繁忙或无法锁定：%s。未做任何更改。",
                                   strerror(lockError)];
         return FBSaveFailed;
     }
@@ -300,9 +300,9 @@ FBSaveResult filebrowser_save(NSString *path, NSData *data, FBFileIdentity expec
     int rerr = 0;
     NSData *currentData = filebrowser_read_fd(fd, kFBMaxBackupBytes, &tooBig, &rerr);
     if (!currentData) {
-        msg = [NSString stringWithFormat:@"The current file couldn't be read for a backup (%s). Nothing was written.", strerror(rerr)];
+        msg = [NSString stringWithFormat:@"无法读取当前文件进行备份（%s）。未写入任何内容。", strerror(rerr)];
     } else if (tooBig) {
-        msg = @"The current file is too large to back up first. Nothing was written.";
+        msg = @"当前文件太大，无法先备份。未写入任何内容。";
     } else if (!force && (!fb_same_object(expected, current) || !loaded || ![currentData isEqualToData:loaded])) {
         result = FBSaveConflict;
     } else {
@@ -329,7 +329,7 @@ FBSaveResult filebrowser_save(NSString *path, NSData *data, FBFileIdentity expec
         // fb_leftover_backups / the notice on the next File Browser open).
         NSString *backupPath = [backup stringByAppendingString:@".path"];
         if (!dirReady) {
-            msg = [NSString stringWithFormat:@"A durable recovery folder couldn't be prepared%@. Nothing was changed.",
+            msg = [NSString stringWithFormat:@"无法准备可靠的恢复目录%@。未做任何更改。",
                    dirError.localizedDescription.length ? [NSString stringWithFormat:@" (%@)", dirError.localizedDescription] : @""];
         } else if (!fb_write_durable_file(backup, currentData, 0600) ||
                    !fb_write_durable_file(backupPath, [path dataUsingEncoding:NSUTF8StringEncoding], 0600)) {
@@ -337,7 +337,7 @@ FBSaveResult filebrowser_save(NSString *path, NSData *data, FBFileIdentity expec
             // the leftover would raise a false "Unfinished Saves" notice.
             [NSFileManager.defaultManager removeItemAtPath:backup error:nil];
             [NSFileManager.defaultManager removeItemAtPath:backupPath error:nil];
-            msg = @"A backup of the current file couldn't be written. Nothing was changed.";
+            msg = @"无法写入当前文件的备份。未做任何更改。";
         } else {
             // Recheck after the durable preimage was made.  This catches a
             // cooperative writer that ignores flock and a pathname replaced
@@ -350,7 +350,7 @@ FBSaveResult filebrowser_save(NSString *path, NSData *data, FBFileIdentity expec
             if (!fb_same_object(current, beforeCommit) || !fb_same_object(current, visibleBefore) ||
                 stableTooBig || !stableData || ![stableData isEqualToData:currentData]) {
                 result = FBSaveConflict;
-                msg = @"The file changed while it was being prepared. Nothing was written; reload and try again.";
+                msg = @"文件在准备期间发生变更。未写入任何内容；请重新加载后再试。";
                 [NSFileManager.defaultManager removeItemAtPath:backup error:nil];
                 [NSFileManager.defaultManager removeItemAtPath:backupPath error:nil];
             } else if (fb_pwrite_all(fd, data)) {
@@ -380,7 +380,7 @@ FBSaveResult filebrowser_save(NSString *path, NSData *data, FBFileIdentity expec
                     // only copy of the previous contents if the file is now
                     // new, partial or unknown.
                     result = FBSaveUncertain;
-                    msg = [NSString stringWithFormat:@"Your edit was written, but the result couldn't be verified (%s). "
+                    msg = [NSString stringWithFormat:@"你的编辑已写入，但结果无法验证（%s）。"
                                                      @"Reload the file to check it. A backup of its previous contents was kept at:\n%@",
                                                      postError ? strerror(postError) : "the file could not be re-checked", backup];
                 } else {
@@ -393,7 +393,7 @@ FBSaveResult filebrowser_save(NSString *path, NSData *data, FBFileIdentity expec
                     [NSFileManager.defaultManager removeItemAtPath:backup error:nil];
                     [NSFileManager.defaultManager removeItemAtPath:backupPath error:nil];
                     result = FBSaveConflict;
-                    msg = @"Another program changed the file while it was being saved, so what is in it now may not be your edit. Reload to see the current contents before trying again.";
+                    msg = @"其他程序在保存期间修改了该文件，现在的内容可能不是你的编辑。请先重新加载查看当前内容，然后再试。";
                 }
             } else {
             int werr = errno;
@@ -402,9 +402,9 @@ FBSaveResult filebrowser_save(NSString *path, NSData *data, FBFileIdentity expec
                 [NSFileManager.defaultManager removeItemAtPath:backup error:nil];
                 [NSFileManager.defaultManager removeItemAtPath:backupPath error:nil];
                 if (newIdentity) *newIdentity = filebrowser_identity_fd(fd);
-                msg = [NSString stringWithFormat:@"Writing failed (%s). The file's previous contents were written back.", strerror(werr)];
+                msg = [NSString stringWithFormat:@"写入失败（%s）。已写回文件先前的内容。", strerror(werr)];
             } else {
-                msg = [NSString stringWithFormat:@"Writing failed (%s), and restoring the previous contents failed too. "
+                msg = [NSString stringWithFormat:@"写入失败（%s），且恢复先前内容也失败了。"
                                                  @"The file may be damaged. A backup of its previous contents is at:\n%@",
                                                  strerror(werr), backup];
             }
@@ -537,7 +537,7 @@ static BOOL fb_is_image(NSData *data)
 static NSError *fb_locked_error(void)
 {
     return [NSError errorWithDomain:NSPOSIXErrorDomain code:EPERM
-                           userInfo:@{ NSLocalizedDescriptionKey: @"Changes were locked before this could run." }];
+                           userInfo:@{ NSLocalizedDescriptionKey: @"在此操作运行前更改被锁定了。" }];
 }
 
 static void fb_alert(UIViewController *vc, NSString *title, NSString *message)
@@ -573,7 +573,7 @@ static const unsigned long long kFBMaxImportItemBytes = 128ULL * 1024ULL * 1024U
 static BOOL fb_import_add_item(NSUInteger *items, NSString **failure)
 {
     if (*items >= kFBMaxImportItems) {
-        if (failure) *failure = [NSString stringWithFormat:@"Import exceeds the %lu-item limit.",
+        if (failure) *failure = [NSString stringWithFormat:@"导入超过 %lu 项的上限。",
                                   (unsigned long)kFBMaxImportItems];
         return NO;
     }
@@ -589,27 +589,27 @@ static BOOL fb_import_copy_regular(NSString *source, NSString *target, const str
     // swapped in since then fails here instead of importing its target.
     int in = open(source.fileSystemRepresentation, O_RDONLY | O_NONBLOCK | O_NOFOLLOW | O_CLOEXEC);
     if (in < 0) {
-        if (failure) *failure = [NSString stringWithFormat:@"Couldn't open %@: %s", source.lastPathComponent, strerror(errno)];
+        if (failure) *failure = [NSString stringWithFormat:@"无法打开 %@：%s", source.lastPathComponent, strerror(errno)];
         return NO;
     }
     struct stat opened;
     if (fstat(in, &opened) != 0 || !S_ISREG(opened.st_mode)) {
         close(in);
-        if (failure) *failure = [NSString stringWithFormat:@"%@ is no longer a regular file.", source.lastPathComponent];
+        if (failure) *failure = [NSString stringWithFormat:@"%@ 已不是常规文件。", source.lastPathComponent];
         return NO;
     }
     // Must still be the object that was inspected, not a different regular
     // file renamed into place meanwhile.
     if (opened.st_dev != sourceStat->st_dev || opened.st_ino != sourceStat->st_ino) {
         close(in);
-        if (failure) *failure = [NSString stringWithFormat:@"%@ was replaced while it was being imported.", source.lastPathComponent];
+        if (failure) *failure = [NSString stringWithFormat:@"%@ 在导入期间被替换。", source.lastPathComponent];
         return NO;
     }
     int out = open(target.fileSystemRepresentation, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC,
                    sourceStat->st_mode & 0777);
     if (out < 0) {
         close(in);
-        if (failure) *failure = [NSString stringWithFormat:@"Couldn't create %@: %s", target.lastPathComponent, strerror(errno)];
+        if (failure) *failure = [NSString stringWithFormat:@"无法创建 %@：%s", target.lastPathComponent, strerror(errno)];
         return NO;
     }
     BOOL ok = YES;
@@ -617,7 +617,7 @@ static BOOL fb_import_copy_regular(NSString *source, NSString *target, const str
     char buf[64 * 1024];
     while (ok) {
         if (!filebrowser_write_enabled()) {
-            if (failure) *failure = @"Changes were locked while the import was running.";
+            if (failure) *failure = @"导入期间更改被锁定。";
             ok = NO;
             break;
         }
@@ -625,8 +625,8 @@ static BOOL fb_import_copy_regular(NSString *source, NSString *target, const str
                                            kFBMaxImportBytes - MIN(*totalBytes, kFBMaxImportBytes));
         if (!remaining) {
             ssize_t probe = read(in, buf, 1);
-            if (probe > 0 && failure) *failure = @"Import exceeds the 128 MB per-file or 512 MB aggregate limit.";
-            else if (probe < 0 && errno != EINTR && failure) *failure = @"The source could not be read.";
+            if (probe > 0 && failure) *failure = @"导入超过单文件 128 MB 或总计 512 MB 的上限。";
+            else if (probe < 0 && errno != EINTR && failure) *failure = @"源无法读取。";
             ok = probe == 0;
             break;
         }
@@ -634,7 +634,7 @@ static BOOL fb_import_copy_regular(NSString *source, NSString *target, const str
         ssize_t n = read(in, buf, want);
         if (n < 0 && errno == EINTR) continue;
         if (n < 0) {
-            if (failure) *failure = [NSString stringWithFormat:@"Couldn't read %@: %s", source.lastPathComponent, strerror(errno)];
+            if (failure) *failure = [NSString stringWithFormat:@"无法读取 %@：%s", source.lastPathComponent, strerror(errno)];
             ok = NO;
             break;
         }
@@ -644,7 +644,7 @@ static BOOL fb_import_copy_regular(NSString *source, NSString *target, const str
             ssize_t w = write(out, buf + done, (size_t)n - done);
             if (w < 0 && errno == EINTR) continue;
             if (w <= 0) {
-                if (failure) *failure = [NSString stringWithFormat:@"Couldn't write %@: %s", target.lastPathComponent, strerror(errno)];
+                if (failure) *failure = [NSString stringWithFormat:@"无法写入 %@：%s", target.lastPathComponent, strerror(errno)];
                 ok = NO;
                 break;
             }
@@ -664,7 +664,7 @@ static BOOL fb_import_copy_path(NSString *source, NSString *target, NSUInteger *
 {
     struct stat st;
     if (lstat(source.fileSystemRepresentation, &st) != 0) {
-        if (failure) *failure = [NSString stringWithFormat:@"Couldn't inspect %@: %s", source.lastPathComponent, strerror(errno)];
+        if (failure) *failure = [NSString stringWithFormat:@"无法检查 %@：%s", source.lastPathComponent, strerror(errno)];
         return NO;
     }
     if (!fb_import_add_item(items, failure)) return NO;
@@ -674,36 +674,36 @@ static BOOL fb_import_copy_path(NSString *source, NSString *target, NSUInteger *
         ssize_t n = readlink(source.fileSystemRepresentation, link, sizeof(link) - 1);
         if (n >= 0 && n < (ssize_t)sizeof(link) - 1) link[n] = 0;   // readlink doesn't terminate
         if (n < 0 || n >= (ssize_t)sizeof(link) - 1 || symlink(link, target.fileSystemRepresentation) != 0) {
-            if (failure) *failure = [NSString stringWithFormat:@"Couldn't copy link %@.", source.lastPathComponent];
+            if (failure) *failure = [NSString stringWithFormat:@"无法复制链接 %@。", source.lastPathComponent];
             return NO;
         }
         return YES;
     }
     if (!S_ISDIR(st.st_mode)) {
-        if (failure) *failure = [NSString stringWithFormat:@"%@ is a special file and cannot be imported.", source.lastPathComponent];
+        if (failure) *failure = [NSString stringWithFormat:@"%@ 是特殊文件，无法导入。", source.lastPathComponent];
         return NO;
     }
     if (mkdir(target.fileSystemRepresentation, st.st_mode & 0777) != 0) {
-        if (failure) *failure = [NSString stringWithFormat:@"Couldn't create %@: %s", target.lastPathComponent, strerror(errno)];
+        if (failure) *failure = [NSString stringWithFormat:@"无法创建 %@：%s", target.lastPathComponent, strerror(errno)];
         return NO;
     }
     NSDirectoryEnumerator *enumerator = [NSFileManager.defaultManager enumeratorAtPath:source];
     for (NSString *relative in enumerator) {
         if (!filebrowser_write_enabled()) {
-            if (failure) *failure = @"Changes were locked while the import was running.";
+            if (failure) *failure = @"导入期间更改被锁定。";
             return NO;
         }
         NSString *child = [source stringByAppendingPathComponent:relative];
         NSString *destination = [target stringByAppendingPathComponent:relative];
         struct stat childStat;
         if (lstat(child.fileSystemRepresentation, &childStat) != 0) {
-            if (failure) *failure = [NSString stringWithFormat:@"Couldn't inspect %@: %s", relative, strerror(errno)];
+            if (failure) *failure = [NSString stringWithFormat:@"无法检查 %@：%s", relative, strerror(errno)];
             return NO;
         }
         if (!fb_import_add_item(items, failure)) return NO;
         if (S_ISDIR(childStat.st_mode)) {
             if (mkdir(destination.fileSystemRepresentation, childStat.st_mode & 0777) != 0) {
-                if (failure) *failure = [NSString stringWithFormat:@"Couldn't create %@: %s", relative, strerror(errno)];
+                if (failure) *failure = [NSString stringWithFormat:@"无法创建 %@：%s", relative, strerror(errno)];
                 return NO;
             }
         } else if (S_ISREG(childStat.st_mode)) {
@@ -714,11 +714,11 @@ static BOOL fb_import_copy_path(NSString *source, NSString *target, NSUInteger *
             ssize_t n = readlink(child.fileSystemRepresentation, link, sizeof(link) - 1);
             if (n >= 0 && n < (ssize_t)sizeof(link) - 1) link[n] = 0;   // readlink doesn't terminate
             if (n < 0 || n >= (ssize_t)sizeof(link) - 1 || symlink(link, destination.fileSystemRepresentation) != 0) {
-                if (failure) *failure = [NSString stringWithFormat:@"Couldn't copy link %@.", relative];
+                if (failure) *failure = [NSString stringWithFormat:@"无法复制链接 %@。", relative];
                 return NO;
             }
         } else {
-            if (failure) *failure = [NSString stringWithFormat:@"%@ contains a special file and cannot be imported.", relative];
+            if (failure) *failure = [NSString stringWithFormat:@"%@ 包含特殊文件，无法导入。", relative];
             return NO;
         }
     }
@@ -738,7 +738,7 @@ static NSArray<NSString *> *fb_bounded_directory_names(NSString *path, BOOL *inc
     if (!dir) {
         if (error) *error = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno
                                             userInfo:@{ NSLocalizedDescriptionKey:
-                                                            [NSString stringWithUTF8String:strerror(errno)] ?: @"directory open failed" }];
+                                                            [NSString stringWithUTF8String:strerror(errno)] ?: @"目录打开失败" }];
         return nil;
     }
     NSMutableArray<NSString *> *names = [NSMutableArray arrayWithCapacity:kFBMaxOrdinaryEntries];
@@ -774,7 +774,7 @@ static NSArray<NSString *> *fb_bounded_directory_names(NSString *path, BOOL *inc
         int code = enumerationError ?: (closeError != 0 ? errno : EIO);
         if (error) *error = [NSError errorWithDomain:NSPOSIXErrorDomain code:code
                                             userInfo:@{ NSLocalizedDescriptionKey:
-                                                            [NSString stringWithUTF8String:strerror(code)] ?: @"directory enumeration failed" }];
+                                                            [NSString stringWithUTF8String:strerror(code)] ?: @"目录枚举失败" }];
         return nil;
     }
     return names;
@@ -1179,7 +1179,7 @@ static BOOL fb_entry_still_matches(FBEntry *entry, NSError **error)
         (st.st_mode & S_IFMT) != (entry.mode & S_IFMT)) {
         if (error) *error = [NSError errorWithDomain:NSPOSIXErrorDomain code:EBUSY
                                             userInfo:@{ NSLocalizedDescriptionKey:
-                                                            @"The file changed or was replaced. Reload the folder and try again." }];
+                                                            @"文件已更改或被替换。请重新加载目录后再试。" }];
         return NO;
     }
     return YES;
@@ -1267,7 +1267,7 @@ static const NSUInteger kFBMaxHexBytes = 64 * 1024;
         ]];
     }
 
-    self.textView.text = @"Loading…";
+    self.textView.text = @"正在加载…";
     NSString *path = self.entry.path;
     BOOL viaRoot = self.entry.viaRoot;
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
@@ -1399,7 +1399,7 @@ static const NSUInteger kFBMaxHexBytes = 64 * 1024;
 {
     if (self.saving) return;
     if (!filebrowser_write_enabled() || self.entry.viaRoot) {
-        fb_alert(self, @"Not Saved", @"Changes are locked. Unlock them in the File Browser first.");
+        fb_alert(self, @"未保存", @"更改已锁定。请先在文件浏览器中解锁。");
         return;
     }
     NSString *text = self.textView.text ?: @"";
@@ -1416,8 +1416,8 @@ static const NSUInteger kFBMaxHexBytes = 64 * 1024;
             out = [NSPropertyListSerialization dataWithPropertyList:plist format:fmt options:0 error:&err];
         }
         if (!out) {
-            fb_alert(self, @"Not Saved", [NSString stringWithFormat:@"The plist is not valid: %@",
-                                          err.localizedDescription ?: @"parse error"]);
+            fb_alert(self, @"未保存", [NSString stringWithFormat:@"plist 无效：%@",
+                                          err.localizedDescription ?: @"解析错误"]);
             return;
         }
     } else {
@@ -1440,10 +1440,10 @@ static const NSUInteger kFBMaxHexBytes = 64 * 1024;
             self.textView.editable = self.editingText;
             [self updateBarButtons];
             if (r == FBSaveConflict) {
-                UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"File Changed"
-                                                                            message:@"The file was changed or replaced since you opened it. Overwrite it with your version?"
+                UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"文件已变更"
+                                                                            message:@"文件在你打开后已被更改或替换。要用你的版本覆盖吗？"
                                                                      preferredStyle:UIAlertControllerStyleAlert];
-                [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+                [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
                 [ac addAction:[UIAlertAction actionWithTitle:@"Overwrite" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *a) {
                     [self saveEditOverwriting:YES];
                 }]];
@@ -1452,14 +1452,14 @@ static const NSUInteger kFBMaxHexBytes = 64 * 1024;
             }
             if (r == FBSaveFailed) {
                 if (newIdent.valid) self.identity = newIdent;   // restored: matches disk again
-                fb_alert(self, @"Not Saved", message ?: @"The file could not be written.");
+                fb_alert(self, @"未保存", message ?: @"文件写入失败。");
                 return;
             }
             if (r == FBSaveUncertain) {
                 // Written but unverified: keep the edit open and the old
                 // identity, so a later plain save reports a conflict instead
                 // of silently trusting an unknown file.
-                fb_alert(self, @"Save Not Verified", message ?: @"The file was written, but the result couldn't be verified.");
+                fb_alert(self, @"保存未验证", message ?: @"文件已写入，但结果无法验证。");
                 return;
             }
             self.identity = newIdent;
@@ -1608,7 +1608,7 @@ static NSUInteger fb_hex_line_chars(NSUInteger digits, NSUInteger per)
         [out appendString:@"\n"];
     }
     if (self.entry.size > (off_t)n)
-        [out appendFormat:@"\n… first %@ of %@ shown\n", fb_size_string((off_t)n), fb_size_string(self.entry.size)];
+        [out appendFormat:@"\n… 已显示 %@ 中的前 %@ 项\n", fb_size_string((off_t)n), fb_size_string(self.entry.size)];
     return out;
 }
 
@@ -1632,21 +1632,21 @@ static NSUInteger fb_hex_line_chars(NSUInteger digits, NSUInteger per)
 {
     FBEntry *e = self.entry;
     NSMutableString *s = [NSMutableString string];
-    [s appendFormat:@"Path\n%@\n\n", e.path];
-    if (e.linkTarget) [s appendFormat:@"Link target\n%@\n\n", e.linkTarget];
-    [s appendFormat:@"Size\n%@ (%lld bytes)\n\n", fb_size_string(e.size), (long long)e.size];
-    [s appendFormat:@"Modified\n%@\n\n", fb_date_string(e.modified)];
-    [s appendFormat:@"Permissions\n%@  %@:%@\n\n", fb_mode_string(e.mode, e.isSymlink),
+    [s appendFormat:@"路径\n%@\n\n", e.path];
+    if (e.linkTarget) [s appendFormat:@"链接目标\n%@\n\n", e.linkTarget];
+    [s appendFormat:@"大小\n%@（%lld 字节）\n\n", fb_size_string(e.size), (long long)e.size];
+    [s appendFormat:@"修改时间\n%@\n\n", fb_date_string(e.modified)];
+    [s appendFormat:@"权限\n%@  %@:%@\n\n", fb_mode_string(e.mode, e.isSymlink),
                     fb_user_name(e.uid), fb_group_name(e.gid)];
     if (self.notRegular)
-        [s appendString:@"This is a special file (FIFO, device or socket). Its contents are not read, "
+        [s appendString:@"这是特殊文件（FIFO、设备或套接字）。其内容不会被读取，"
                         @"because opening it could block or have side effects.\n"];
     else if (self.readFailure.length)
-        [s appendFormat:@"Reading the contents failed: %@\n", self.readFailure];
+        [s appendFormat:@"读取内容失败：%@\n", self.readFailure];
     else if (!self.data && self.readError)
-        [s appendFormat:@"Reading the contents failed: %s.\n", strerror(self.readError)];
+        [s appendFormat:@"读取内容失败：%s。\n", strerror(self.readError)];
     else if (!self.data)
-        [s appendString:@"The contents could not be read (permission denied or data protection).\n"];
+        [s appendString:@"内容无法读取（权限被拒或数据保护）。\n"];
     return s;
 }
 
@@ -1666,10 +1666,10 @@ static NSUInteger fb_hex_line_chars(NSUInteger digits, NSUInteger per)
     self.textView.font = [UIFont monospacedSystemFontOfSize:kFBHexBaseFont weight:UIFontWeightRegular];
     switch (mode) {
         case FBViewText:
-            if (self.data) text = [self plistText] ?: [self utf8Text] ?: @"Not a text file. Try Hex.";
-            if (self.truncated) text = [text stringByAppendingFormat:@"\n\n… first %@ shown", fb_size_string(kFBMaxTextBytes)];
+            if (self.data) text = [self plistText] ?: [self utf8Text] ?: @"不是文本文件。请用十六进制视图。";
+            if (self.truncated) text = [text stringByAppendingFormat:@"\n\n… 已显示前 %@", fb_size_string(kFBMaxTextBytes)];
             break;
-        case FBViewImage: if (self.data) text = @"Not an image (or too large to show)."; break;
+        case FBViewImage: if (self.data) text = @"不是图片（或太大无法显示）。"; break;
         case FBViewHex:   if (self.data) text = [self hexText]; break;
         case FBViewInfo:  text = [self infoText]; break;
     }
@@ -1766,29 +1766,29 @@ static BOOL fb_share_prepare(FBShareOperation *op, NSString **failure)
     BOOL rootExists = lstat(root.fileSystemRepresentation, &rootSt) == 0;
     if (rootExists) {
         if (!S_ISDIR(rootSt.st_mode)) {
-            if (failure) *failure = @"The share staging folder is not a directory.";
+            if (failure) *failure = @"分享暂存目录不是目录。";
             return NO;
         }
     } else if (errno != ENOENT) {
-        if (failure) *failure = @"The share staging folder could not be inspected.";
+        if (failure) *failure = @"分享暂存目录无法检查。";
         return NO;
     }
     NSError *error = nil;
     if (!rootExists &&
         ![NSFileManager.defaultManager createDirectoryAtPath:root withIntermediateDirectories:YES
                                                     attributes:nil error:&error]) {
-        if (failure) *failure = error.localizedDescription ?: @"The share staging folder could not be created.";
+        if (failure) *failure = error.localizedDescription ?: @"无法创建分享暂存目录。";
         return NO;
     }
     if (lstat(root.fileSystemRepresentation, &rootSt) != 0 || !S_ISDIR(rootSt.st_mode)) {
-        if (failure) *failure = @"The share staging folder is not a safe directory.";
+        if (failure) *failure = @"分享暂存目录不是安全目录。";
         return NO;
     }
 
     NSString *dir = [root stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
     if (![NSFileManager.defaultManager createDirectoryAtPath:dir withIntermediateDirectories:NO
                                                     attributes:nil error:&error]) {
-        if (failure) *failure = error.localizedDescription ?: @"The share staging folder could not be created.";
+        if (failure) *failure = error.localizedDescription ?: @"无法创建分享暂存目录。";
         return NO;
     }
     NSString *marker = [dir stringByAppendingPathComponent:@".active"];
@@ -1797,14 +1797,14 @@ static BOOL fb_share_prepare(FBShareOperation *op, NSString **failure)
     if (fd < 0 || flock(fd, LOCK_EX | LOCK_NB) != 0) {
         if (fd >= 0) close(fd);
         [NSFileManager.defaultManager removeItemAtPath:dir error:nil];
-        if (failure) *failure = @"The share staging operation could not be reserved.";
+        if (failure) *failure = @"无法锁定分享暂存操作。";
         return NO;
     }
     const char markerText[] = "cyanide-share-active\n";
     if (write(fd, markerText, sizeof(markerText) - 1) != (ssize_t)(sizeof(markerText) - 1)) {
         close(fd);
         [NSFileManager.defaultManager removeItemAtPath:dir error:nil];
-        if (failure) *failure = @"The share staging marker could not be written.";
+        if (failure) *failure = @"分享暂存标记写入失败。";
         return NO;
     }
     op.dir = dir;
@@ -1820,18 +1820,18 @@ static BOOL fb_share_write_data(FBShareOperation *op, NSData *data, NSString **f
     int fd = open(op.stagedPath.fileSystemRepresentation,
                   O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC | O_NOFOLLOW, 0644);
     if (fd < 0) {
-        if (failure) *failure = @"The copy could not be created.";
+        if (failure) *failure = @"无法创建副本。";
         return NO;
     }
     const uint8_t *bytes = data.bytes;
     size_t offset = 0;
     BOOL ok = YES;
     while (offset < data.length) {
-        if ([op isCancelled]) { if (failure) *failure = @"Sharing was cancelled."; ok = NO; break; }
+        if ([op isCancelled]) { if (failure) *failure = @"分享已取消。"; ok = NO; break; }
         size_t want = MIN((size_t)64 * 1024, data.length - offset);
         ssize_t n = write(fd, bytes + offset, want);
         if (n < 0 && errno == EINTR) continue;
-        if (n <= 0) { if (failure) *failure = @"The copy could not be written."; ok = NO; break; }
+        if (n <= 0) { if (failure) *failure = @"副本写入失败。"; ok = NO; break; }
         offset += (size_t)n;
     }
     if (close(fd) != 0) ok = NO;
@@ -1841,9 +1841,9 @@ static BOOL fb_share_write_data(FBShareOperation *op, NSData *data, NSString **f
 
 static BOOL fb_share_copy_regular(FBShareOperation *op, NSString *path, NSString **failure)
 {
-    if ([op isCancelled]) { if (failure) *failure = @"Sharing was cancelled."; return NO; }
+    if ([op isCancelled]) { if (failure) *failure = @"分享已取消。"; return NO; }
     int in = filebrowser_open_regular(path);
-    if (in < 0) { *failure = @"Only regular files can be shared."; return NO; }
+    if (in < 0) { *failure = @"只有常规文件可以分享。"; return NO; }
     // An APFS clone: instant and takes no space, whatever the size (a
     // decrypted IPA is easily hundreds of MB). Cloned from the open fd, so
     // it's the file that was checked, never a swapped-in link.
@@ -1858,26 +1858,26 @@ static BOOL fb_share_copy_regular(FBShareOperation *op, NSString *path, NSString
     unsigned long long freeBytes = [fsAttrs[NSFileSystemFreeSize] unsignedLongLongValue];
     int out = -1;
     if (fstat(in, &inSt) == 0 && freeBytes && (unsigned long long)inSt.st_size + 50ULL * 1024 * 1024 > freeBytes) {
-        *failure = @"There isn't enough free space to share a copy of this file.";
+        *failure = @"可用空间不足，无法分享此文件的副本。";
     } else {
         out = open(op.stagedPath.fileSystemRepresentation, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC | O_NOFOLLOW, 0644);
-        if (out < 0) *failure = @"The copy could not be created.";
+        if (out < 0) *failure = @"无法创建副本。";
     }
     if (out >= 0) {
         char buf[64 * 1024];
         ssize_t n;
         while (!*failure) {
-            if ([op isCancelled]) { *failure = @"Sharing was cancelled."; break; }
+            if ([op isCancelled]) { *failure = @"分享已取消。"; break; }
             n = read(in, buf, sizeof(buf));
             if (n < 0 && errno == EINTR) continue;
-            if (n < 0) { *failure = @"The file could not be read."; break; }
+            if (n < 0) { *failure = @"文件无法读取。"; break; }
             if (n == 0) break;
             size_t done = 0;
             while (done < (size_t)n) {
-                if ([op isCancelled]) { *failure = @"Sharing was cancelled."; break; }
+                if ([op isCancelled]) { *failure = @"分享已取消。"; break; }
                 ssize_t w = write(out, buf + done, (size_t)n - done);
                 if (w < 0 && errno == EINTR) continue;
-                if (w <= 0) { *failure = @"The copy could not be written."; break; }
+                if (w <= 0) { *failure = @"副本写入失败。"; break; }
                 done += (size_t)w;
             }
         }
@@ -1898,7 +1898,7 @@ static void fb_share_complete(FBShareOperation *op, NSString *failure)
     if (failure.length || !presenter.view.window) {
         fb_share_cleanup(op);
         if (!failure.length || !presenter.view.window) return;
-        fb_alert(presenter, @"Couldn't Share", failure);
+        fb_alert(presenter, @"无法分享", failure);
         return;
     }
     UIActivityViewController *avc =
@@ -1975,7 +1975,7 @@ void filebrowser_share_file(UIViewController *presenter, NSString *path, BOOL vi
         void (^end)(void) = op.finished;
         op.finished = nil;
         if (end) end();
-        if (presenter.view.window) fb_alert(presenter, @"Couldn't Share", prepareFailure ?: @"The copy could not be prepared.");
+        if (presenter.view.window) fb_alert(presenter, @"无法分享", prepareFailure ?: @"无法准备副本。");
         return;
     }
     [fb_share_operations() addObject:op];
@@ -1984,10 +1984,10 @@ void filebrowser_share_file(UIViewController *presenter, NSString *path, BOOL vi
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         NSString *failure = nil;
         if ([op isCancelled]) {
-            failure = @"Sharing was cancelled.";
+            failure = @"分享已取消。";
         } else if (snapshot) {
             if (snapshot.length > kFBMaxShareBytes)
-                failure = @"The file is larger than 64 MB. Sharing files that large is not supported.";
+                failure = @"文件大于 64 MB。不支持分享这么大的文件。";
             else
                 fb_share_write_data(op, snapshot, &failure);
         } else if (viaRoot) {
@@ -1995,20 +1995,20 @@ void filebrowser_share_file(UIViewController *presenter, NSString *path, BOOL vi
             // session here.  The root reader owns that session; cancellation
             // is checked before and immediately after its bounded read.
             if ([op isCancelled]) {
-                failure = @"Sharing was cancelled.";
+                failure = @"分享已取消。";
             } else {
                 NSString *rootErr = nil;
                 BOOL truncated = NO;
                 NSData *full = settings_root_read_file(sourcePath, kFBMaxShareBytes, &truncated, &rootErr);
-                if ([op isCancelled]) failure = @"Sharing was cancelled.";
-                else if (!full) failure = rootErr ?: @"The file could not be read as root.";
-                else if (truncated) failure = @"The file is larger than 64 MB. Sharing only part of it is not supported.";
+                if ([op isCancelled]) failure = @"分享已取消。";
+                else if (!full) failure = rootErr ?: @"文件无法以 root 读取。";
+                else if (truncated) failure = @"文件大于 64 MB。不支持只分享其中一部分。";
                 else fb_share_write_data(op, full, &failure);
             }
         } else {
             fb_share_copy_regular(op, sourcePath, &failure);
         }
-        if (!failure && [op isCancelled]) failure = @"Sharing was cancelled.";
+        if (!failure && [op isCancelled]) failure = @"分享已取消。";
         if (!failure) [op markStagingReady];
         dispatch_async(dispatch_get_main_queue(), ^{ fb_share_complete(op, failure); });
     });
@@ -2311,9 +2311,9 @@ static void fb_annotate_containers(NSString *dir, NSMutableArray<FBEntry *> *ent
 static NSString *fb_related_title(FBAppContainer *c)
 {
     switch (c.kind) {
-        case FBContainerKindBundle: return @"Open Data Container";
-        case FBContainerKindData:   return @"Open App Bundle";
-        case FBContainerKindPlugin: return @"Open App's Data Container";
+        case FBContainerKindBundle: return @"打开数据容器";
+        case FBContainerKindData:   return @"打开应用包";
+        case FBContainerKindPlugin: return @"打开此应用的数据容器";
         default:                    return nil;
     }
 }
@@ -2330,17 +2330,17 @@ static NSString *fb_size_notes(FBSizeJob *job, BOOL rootOn)
 {
     NSMutableArray<NSString *> *notes = [NSMutableArray array];
     if (job.unreadable)
-        [notes addObject:[NSString stringWithFormat:@"%@ folder%@ could not be read%@.", fb_count_string(job.unreadable),
+        [notes addObject:[NSString stringWithFormat:@"%@ 个目录%@无法读取%@。", fb_count_string(job.unreadable),
                           job.unreadable == 1 ? @"" : @"s",
-                          rootOn ? @"" : @" (turn on Root Access in ⋯ to include them)"]];
+                          rootOn ? @"" : @" （在 ⋯ 中打开 Root 访问以包含它们）"]];
     if (job.viaRoot && job.estimated)
-        [notes addObject:[NSString stringWithFormat:@"%@ folder%@ read as root; the on-disk size of %@ file%@ is estimated.",
+        [notes addObject:[NSString stringWithFormat:@"%@ 个目录%@以 root 读取；%@ 个文件%@的磁盘大小为估算值。",
                           fb_count_string(job.viaRoot), job.viaRoot == 1 ? @"" : @"s",
                           fb_count_string(job.estimated), job.estimated == 1 ? @"" : @"s"]];
     else if (job.viaRoot)
-        [notes addObject:[NSString stringWithFormat:@"%@ folder%@ read as root.", fb_count_string(job.viaRoot),
+        [notes addObject:[NSString stringWithFormat:@"%@ 个目录%@以 root 读取。", fb_count_string(job.viaRoot),
                           job.viaRoot == 1 ? @"" : @"s"]];
-    if (job.incomplete) [notes addObject:@"Some folders could not be listed completely; the real size is larger."];
+    if (job.incomplete) [notes addObject:@"部分目录未能完整列出；实际大小更大。"];
     return [notes componentsJoinedByString:@"\n"];
 }
 
@@ -2358,9 +2358,9 @@ static void fb_show_folder_size(UIViewController *host, NSString *path)
     atomic_init(&job->cancelled, false);
     NSString *title = path.lastPathComponent.length ? path.lastPathComponent : path;
     UIAlertController *wait = [UIAlertController alertControllerWithTitle:title
-                                                                  message:@"Counting…"
+                                                                  message:@"正在统计…"
                                                            preferredStyle:UIAlertControllerStyleAlert];
-    [wait addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *a) {
+    [wait addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction *a) {
         atomic_store(&job->cancelled, true);
     }]];
     [host presentViewController:wait animated:YES completion:nil];
@@ -2368,7 +2368,7 @@ static void fb_show_folder_size(UIViewController *host, NSString *path)
     __weak UIAlertController *weakWait = wait;
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         fb_measure_folder(path, rootOn, job, ^(unsigned long long items) {
-            NSString *text = [NSString stringWithFormat:@"Counting… %@ items, %@ so far",
+            NSString *text = [NSString stringWithFormat:@"正在统计… 共 %@ 项，目前已计 %@",
                               fb_count_string(items), fb_size_string((off_t)job.allocated)];
             dispatch_async(dispatch_get_main_queue(), ^{ weakWait.message = text; });
         });
@@ -2447,8 +2447,8 @@ static const NSUInteger kFBSizeShownItems = 100;
                                                                       renderingMode:UIImageRenderingModeAlwaysOriginal]];
     [text appendAttributedString:[NSAttributedString attributedStringWithAttachment:icon]];
     [text appendAttributedString:[[NSAttributedString alloc] initWithString:
-        @" A large file isn't necessarily safe to delete. Much of this space belongs to iOS, and deleting the wrong "
-        @"file can leave the device unable to start up, needing a full restore. Free space with Cache Cleaner, "
+        @" 大文件不一定可以安全删除。这些空间大部分属于 iOS，删错文件"
+        @"可能导致设备无法启动、需要完整恢复。请用缓存清理器、"
         @"Settings → General → iPhone Storage, or the app that owns the data."
         attributes:@{ NSFontAttributeName: warning.font, NSForegroundColorAttributeName: UIColor.secondaryLabelColor }]];
     warning.attributedText = text;
@@ -2502,26 +2502,26 @@ static const NSUInteger kFBSizeShownItems = 100;
 - (NSString *)relativeFolder:(FBSizeItem *)item
 {
     NSString *dir = item.path.stringByDeletingLastPathComponent;
-    if ([dir isEqualToString:_path]) return @"in this folder";
+    if ([dir isEqualToString:_path]) return @"在此目录中";
     NSString *prefix = [_path hasSuffix:@"/"] ? _path : [_path stringByAppendingString:@"/"];
     return [dir hasPrefix:prefix] ? [dir substringFromIndex:prefix.length] : dir;
 }
 
 - (void)copyResult
 {
-    NSMutableString *text = [NSMutableString stringWithFormat:@"%@\n%@ on disk\n%@ of data\n%@ files in %@ folders",
+    NSMutableString *text = [NSMutableString stringWithFormat:@"%@\n磁盘占用 %@\n数据量 %@\n%@ 个文件，位于 %@ 个目录",
         _path, fb_size_string((off_t)_job.allocated), fb_size_string((off_t)_job.logical),
         fb_count_string(_job.files), fb_count_string(_job.folders)];
     NSString *notes = fb_size_notes(_job, _rootOn);
     if (notes.length) [text appendFormat:@"\n\n%@", notes];
     if (_items.count) {
-        [text appendString:@"\n\nLargest items:"];
+        [text appendString:@"\n\n最大的项目："];
         for (NSUInteger i = 0; i < MIN(_items.count, 15u); i++)
             [text appendFormat:@"\n%@  %@%@", fb_size_string((off_t)_items[i].allocated), _items[i].name,
              _items[i].isDirectory ? @"/" : @""];
     }
     if (_files.count) {
-        [text appendString:@"\n\nLargest files:"];
+        [text appendString:@"\n\n最大的文件："];
         for (NSUInteger i = 0; i < MIN(_files.count, 15u); i++)
             [text appendFormat:@"\n%@  %@", fb_size_string((off_t)_files[i].allocated), _files[i].path];
     }
@@ -2551,8 +2551,8 @@ static const NSUInteger kFBSizeShownItems = 100;
 {
     switch ((FBSizeSection)section) {
         case FBSizeSectionSummary: return nil;
-        case FBSizeSectionItems: return _items.count ? @"Largest Items" : nil;
-        case FBSizeSectionFiles: return _files.count ? @"Largest Files" : nil;
+        case FBSizeSectionItems: return _items.count ? @"最大的项目" : nil;
+        case FBSizeSectionFiles: return _files.count ? @"最大的文件" : nil;
         default: return nil;
     }
 }
@@ -2567,16 +2567,16 @@ static const NSUInteger kFBSizeShownItems = 100;
         case FBSizeSectionItems:
             if (!_items.count) return nil;
             return _job.children.count > _items.count
-                ? [NSString stringWithFormat:@"The %@ largest of %@ items. Tap a folder to see inside it.",
+                ? [NSString stringWithFormat:@"共 %@ 项中最大的 %@ 项。点按目录可查看其内容。",
                    fb_count_string(_items.count), fb_count_string(_job.children.count)]
-                : @"Tap a folder to see inside it.";
+                : @"点按目录可查看其内容。";
         case FBSizeSectionFiles:
             if (!_files.count) return nil;
             // APFS copies of a file can share their storage; each is counted
             // in full here (issue #18: two "6.3 GB" backups freed 6.3 GB).
-            return @"Sizes are the space each file takes on disk. Copies of a file made on this device can share "
-                   @"their storage and are each counted in full, so deleting one may free less than shown. "
-                   @"Tap a file to open its folder.";
+            return @"大小是每个文件在磁盘上占用的空间。同一文件在本机的副本可能"
+                   @"共享存储但都按完整大小计入，所以删除其中一个可能释放不了显示的空间。"
+                   @"点按文件可打开其所在目录。";
         default: return nil;
     }
 }
@@ -2589,7 +2589,7 @@ static const NSUInteger kFBSizeShownItems = 100;
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
         switch (indexPath.row) {
             case 0:
-                cell.textLabel.text = @"On Disk";
+                cell.textLabel.text = @"磁盘占用";
                 cell.detailTextLabel.text = fb_size_string((off_t)_job.allocated);
                 break;
             case 1:
@@ -2598,7 +2598,7 @@ static const NSUInteger kFBSizeShownItems = 100;
                 break;
             default:
                 cell.textLabel.text = @"Contents";
-                cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ files, %@ folders",
+                cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ 个文件，%@ 个目录",
                                              fb_count_string(_job.files), fb_count_string(_job.folders)];
                 break;
         }
@@ -2619,7 +2619,7 @@ static const NSUInteger kFBSizeShownItems = 100;
         cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ · %@",
                                      fb_size_string((off_t)item.allocated), [self relativeFolder:item]];
     } else if (item.isDirectory) {
-        cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ · %@ · %@ file%@",
+        cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ · %@ · %@ 个文件%@",
                                      fb_size_string((off_t)item.allocated), [self shareText:item],
                                      fb_count_string(item.files), item.files == 1 ? @"" : @"s"];
     } else {
@@ -2662,15 +2662,15 @@ static const NSUInteger kFBSizeShownItems = 100;
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    self.title = [self.path isEqualToString:@"/"] ? @"File Browser" : self.path.lastPathComponent;
+    self.title = [self.path isEqualToString:@"/"] ? @"文件浏览器" : self.path.lastPathComponent;
     self.navigationItem.prompt = self.path;
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeAlways;
 
     self.searchCtrl = [[UISearchController alloc] initWithSearchResultsController:nil];
     self.searchCtrl.searchResultsUpdater = self;
     self.searchCtrl.obscuresBackgroundDuringPresentation = NO;
-    self.searchCtrl.searchBar.placeholder = @"Filter this folder";
-    self.searchCtrl.searchBar.scopeButtonTitles = @[ @"This Folder", @"Subfolders" ];
+    self.searchCtrl.searchBar.placeholder = @"筛选此文件夹";
+    self.searchCtrl.searchBar.scopeButtonTitles = @[ @"此目录", @"Subfolders" ];
     self.searchCtrl.searchBar.delegate = (id<UISearchBarDelegate>)self;
     self.navigationItem.searchController = self.searchCtrl;
     self.navigationItem.hidesSearchBarWhenScrolling = NO;
@@ -2726,7 +2726,7 @@ static const NSUInteger kFBSizeShownItems = 100;
             if (!me) return;
             if (related) { [me openContainer:related]; return; }
             UIAlertController *ac = [UIAlertController alertControllerWithTitle:c.displayName
-                message:@"No matching container was found for this app." preferredStyle:UIAlertControllerStyleAlert];
+                message:@"未找到此应用的匹配容器。" preferredStyle:UIAlertControllerStyleAlert];
             [ac addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
             [me presentViewController:ac animated:YES completion:nil];
         });
@@ -2753,7 +2753,7 @@ static const NSUInteger kFBSizeShownItems = 100;
     BOOL favorite = fb_is_favorite(self.path);
     if (![fb_canonical_path(self.path) isEqualToString:@"/"]) {
         NSString *path = self.path;
-        [items addObject:[UIAction actionWithTitle:favorite ? @"Remove from Favorites" : @"Add to Favorites"
+        [items addObject:[UIAction actionWithTitle:favorite ? @"从个人收藏移除" : @"添加到个人收藏"
                                              image:[UIImage systemImageNamed:favorite ? @"star.slash" : @"star"] identifier:nil
                                            handler:^(UIAction *a) { fb_set_favorite(path, !favorite); [weakSelf updateBarButtons]; }]];
     }
@@ -2790,18 +2790,18 @@ static const NSUInteger kFBSizeShownItems = 100;
     if (!left.count) return;
     NSMutableString *list = [NSMutableString string];
     for (NSUInteger i = 0; i < left.count && i < 3; i++) [list appendFormat:@"\n• %@", left[i]];
-    if (left.count > 3) [list appendFormat:@"\n…and %lu more", (unsigned long)(left.count - 3)];
+    if (left.count > 3) [list appendFormat:@"\n… 以及另外 %lu 项", (unsigned long)(left.count - 3)];
     UIAlertController *ac = [UIAlertController
-        alertControllerWithTitle:@"Unfinished Saves"
-                         message:[NSString stringWithFormat:@"A save didn't finish (for example because the app or the device stopped mid-write), so these files may be incomplete:%@\n\nTheir previous contents were backed up.", list]
+        alertControllerWithTitle:@"未完成的存储"
+                         message:[NSString stringWithFormat:@"有一次存储未完成（例如应用或设备在写入中途停止），以下文件可能不完整：%@\n\n它们的先前内容已有备份。", list]
                   preferredStyle:UIAlertControllerStyleAlert];
     __weak typeof(self) weakSelf = self;
-    [ac addAction:[UIAlertAction actionWithTitle:@"Show Backups" style:UIAlertActionStyleDefault
+    [ac addAction:[UIAlertAction actionWithTitle:@"显示备份" style:UIAlertActionStyleDefault
                                          handler:^(UIAlertAction *a) {
         [weakSelf.navigationController pushViewController:
             [[FileBrowserViewController alloc] initWithPath:fb_backup_dir()] animated:YES];
     }]];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Delete Backups" style:UIAlertActionStyleDestructive
+    [ac addAction:[UIAlertAction actionWithTitle:@"删除备份" style:UIAlertActionStyleDestructive
                                          handler:^(UIAlertAction *a) {
         // Both locations: the notice also lists backups in the old temp folder.
         [NSFileManager.defaultManager removeItemAtPath:fb_backup_dir() error:nil];
@@ -2852,7 +2852,7 @@ static const NSUInteger kFBSizeShownItems = 100;
     };
     NSMutableArray<UIMenuElement *> *appItems = [NSMutableArray array];
     if (self.container && ![fb_canonical_path(self.path) isEqualToString:self.container.path])
-        [appItems addObject:[UIAction actionWithTitle:@"Go to Container Top"
+        [appItems addObject:[UIAction actionWithTitle:@"前往容器顶层"
                                                 image:[UIImage systemImageNamed:@"arrow.up.to.line"] identifier:nil
                                               handler:^(UIAction *x) { [weakOptions openContainer:weakOptions.container]; }]];
     if (self.relatedContainer && fb_related_title(self.container))
@@ -2863,13 +2863,13 @@ static const NSUInteger kFBSizeShownItems = 100;
         [UIMenu menuWithTitle:self.container.displayName ?: @"" image:nil identifier:nil
                       options:UIMenuOptionsDisplayInline children:appItems],
         [self placesMenu],
-        [UIAction actionWithTitle:@"Go to Folder…" image:[UIImage systemImageNamed:@"arrow.right.circle"]
+        [UIAction actionWithTitle:@"前往目录…" image:[UIImage systemImageNamed:@"arrow.right.circle"]
                        identifier:nil handler:^(UIAction *x) { [weakOptions goToPath]; }],
-        [UIAction actionWithTitle:@"Size of This Folder" image:[UIImage systemImageNamed:@"chart.pie"]
+        [UIAction actionWithTitle:@"此目录的大小" image:[UIImage systemImageNamed:@"chart.pie"]
                        identifier:nil handler:^(UIAction *x) { [weakOptions showFolderSize:weakOptions.path]; }],
-        [UIMenu menuWithTitle:@"Sort By" image:[UIImage systemImageNamed:@"arrow.up.arrow.down"] identifier:nil options:0 children:({
+        [UIMenu menuWithTitle:@"排序方式" image:[UIImage systemImageNamed:@"arrow.up.arrow.down"] identifier:nil options:0 children:({
             NSMutableArray *sorts = [NSMutableArray array];
-            NSArray *titles = @[ @"Name", @"Date Modified", @"Size" ];
+            NSArray *titles = @[ @"Name", @"修改日期", @"Size" ];
             NSInteger current = [d integerForKey:kFBSortKey];
             for (NSInteger i = 0; i < 3; i++) {
                 UIAction *a = [UIAction actionWithTitle:titles[i] image:nil identifier:nil handler:^(UIAction *x) {
@@ -2883,11 +2883,11 @@ static const NSUInteger kFBSizeShownItems = 100;
             sorts;
         })],
         [UIMenu menuWithTitle:@"Show" image:nil identifier:nil options:UIMenuOptionsDisplayInline children:@[
-            option(@"Hidden Files", kSettingsFileBrowserShowHidden),
-            option(@"Inaccessible Items", kSettingsFileBrowserShowInaccessible),
+            option(@"隐藏文件", kSettingsFileBrowserShowHidden),
+            option(@"无法访问的项目", kSettingsFileBrowserShowInaccessible),
         ]],
         [UIMenu menuWithTitle:@"Access" image:nil identifier:nil options:UIMenuOptionsDisplayInline children:@[
-            option(@"Root Access (read-only)", kSettingsFileBrowserRootAccess),
+            option(@"Root 访问（只读）", kSettingsFileBrowserRootAccess),
         ]],
     ]];
     UIBarButtonItem *go = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"ellipsis.circle"]
@@ -2898,20 +2898,20 @@ static const NSUInteger kFBSizeShownItems = 100;
                target:self
                action:@selector(toggleWriteMode)];
     lock.tintColor = filebrowser_write_enabled() ? UIColor.systemRedColor : nil;
-    lock.accessibilityLabel = filebrowser_write_enabled() ? @"Disable changes" : @"Enable changes";
+    lock.accessibilityLabel = filebrowser_write_enabled() ? @"禁用更改" : @"启用更改";
     NSMutableArray *items = [NSMutableArray arrayWithObjects:go, lock, nil];
     if (filebrowser_write_enabled() && !self.loadedViaRoot) {   // root access is read-only
         __weak typeof(self) weakSelf = self;
         UIMenu *menu = [UIMenu menuWithChildren:@[
-            [UIAction actionWithTitle:@"New Folder" image:[UIImage systemImageNamed:@"folder.badge.plus"]
+            [UIAction actionWithTitle:@"新建文件夹" image:[UIImage systemImageNamed:@"folder.badge.plus"]
                            identifier:nil handler:^(UIAction *a) { [weakSelf promptNewItem:YES]; }],
-            [UIAction actionWithTitle:@"New File" image:[UIImage systemImageNamed:@"doc.badge.plus"]
+            [UIAction actionWithTitle:@"新建文件" image:[UIImage systemImageNamed:@"doc.badge.plus"]
                            identifier:nil handler:^(UIAction *a) { [weakSelf promptNewItem:NO]; }],
-            [UIAction actionWithTitle:@"Import from Files…" image:[UIImage systemImageNamed:@"square.and.arrow.down"]
+            [UIAction actionWithTitle:@"从“文件”导入…" image:[UIImage systemImageNamed:@"square.and.arrow.down"]
                            identifier:nil handler:^(UIAction *a) { [weakSelf importFromFiles]; }],
         ]];
         if (g_fb_clip_path.length) {
-            NSString *title = [NSString stringWithFormat:@"%@ \"%@\" Here", g_fb_clip_cut ? @"Move" : @"Paste",
+            NSString *title = [NSString stringWithFormat:@"在此%@“%@”", g_fb_clip_cut ? @"Move" : @"Paste",
                                g_fb_clip_path.lastPathComponent];
             UIAction *paste = [UIAction actionWithTitle:title image:[UIImage systemImageNamed:@"doc.on.clipboard"]
                                              identifier:nil handler:^(UIAction *a) { [weakSelf paste]; }];
@@ -2932,13 +2932,13 @@ static const NSUInteger kFBSizeShownItems = 100;
         return;
     }
     UIAlertController *ac = [UIAlertController
-        alertControllerWithTitle:@"Enable Changes?"
-                         message:@"Delete, rename, create, import and edit will write directly to the file system as user mobile. "
-                                 @"Removing or editing the wrong file can break apps or settings, or leave the device unable to "
+        alertControllerWithTitle:@"要启用更改吗？"
+                         message:@"删除、重命名、新建、导入和编辑都将以 mobile 用户直接写入文件系统。"
+                                 @"删除或编辑错误的文件可能损坏应用或设置，甚至导致设备无法"
                                  @"start up (stuck on the Apple logo, needing a full restore with the newest iOS). There is no undo.\n\n"
-                                 @"Stays on until you lock it again or Cyanide restarts."
+                                 @"保持开启，直到你再次锁定或 Cyanide 重启。"
                   preferredStyle:UIAlertControllerStyleAlert];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     [ac addAction:[UIAlertAction actionWithTitle:@"Enable" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *a) {
         atomic_store_explicit(&g_fb_write_enabled, true, memory_order_release);
         [self updateBarButtons];
@@ -2953,7 +2953,7 @@ static const NSUInteger kFBSizeShownItems = 100;
 - (void)perform:(BOOL (^)(NSError **err))op failureTitle:(NSString *)title
 {
     if (!filebrowser_write_enabled() || self.loadedViaRoot) {
-        fb_alert(self, title, @"Changes are locked.");
+        fb_alert(self, title, @"更改已锁定。");
         return;
     }
     dispatch_async(fb_file_queue(), ^{
@@ -2966,7 +2966,7 @@ static const NSUInteger kFBSizeShownItems = 100;
         NSString *message = err.localizedDescription;
         dispatch_async(dispatch_get_main_queue(), ^{
             if (ok) filebrowser_note_filesystem_changed();
-            else fb_alert(self, title, message ?: @"The operation failed.");
+            else fb_alert(self, title, message ?: @"操作失败。");
             [self reload];
         });
     });
@@ -2978,13 +2978,13 @@ static const NSUInteger kFBSizeShownItems = 100;
     // An entry readable only through launchd root is view-only, even in a
     // folder mobile can list: root access is read-only.
     if (entry.viaRoot) {
-        fb_alert(self, title, @"This item is only readable as root, and root access is read-only.");
+        fb_alert(self, title, @"此项目仅 root 可读，而 root 访问是只读的。");
         return;
     }
     [self perform:^BOOL(NSError **err) {
         if (entry.viaRoot) {   // re-checked in the worker
             if (err) *err = [NSError errorWithDomain:NSPOSIXErrorDomain code:EPERM
-                                   userInfo:@{ NSLocalizedDescriptionKey: @"This item is only readable as root, and root access is read-only." }];
+                                   userInfo:@{ NSLocalizedDescriptionKey: @"此项目仅 root 可读，而 root 访问是只读的。" }];
             return NO;
         }
         if (!fb_entry_still_matches(entry, err)) return NO;
@@ -2994,15 +2994,15 @@ static const NSUInteger kFBSizeShownItems = 100;
 
 - (void)promptNewItem:(BOOL)folder
 {
-    UIAlertController *ac = [UIAlertController alertControllerWithTitle:folder ? @"New Folder" : @"New File"
+    UIAlertController *ac = [UIAlertController alertControllerWithTitle:folder ? @"新建文件夹" : @"新建文件"
                                                                 message:self.path
                                                          preferredStyle:UIAlertControllerStyleAlert];
     [ac addTextFieldWithConfigurationHandler:^(UITextField *tf) {
-        tf.placeholder = folder ? @"Folder name" : @"File name";
+        tf.placeholder = folder ? @"文件夹名称" : @"文件名称";
         tf.autocapitalizationType = UITextAutocapitalizationTypeNone;
         tf.autocorrectionType = UITextAutocorrectionTypeNo;
     }];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     [ac addAction:[UIAlertAction actionWithTitle:@"Create" style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) {
         NSString *name = [ac.textFields.firstObject.text stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
         if (!name.length || [name containsString:@"/"]) return;
@@ -3010,7 +3010,7 @@ static const NSUInteger kFBSizeShownItems = 100;
         [self perform:^BOOL(NSError **err) {
             if (access(path.fileSystemRepresentation, F_OK) == 0) {
                 if (err) *err = [NSError errorWithDomain:NSPOSIXErrorDomain code:EEXIST
-                                       userInfo:@{ NSLocalizedDescriptionKey: @"An item with that name already exists." }];
+                                       userInfo:@{ NSLocalizedDescriptionKey: @"同名项目已存在。" }];
                 return NO;
             }
             if (folder)
@@ -3018,7 +3018,7 @@ static const NSUInteger kFBSizeShownItems = 100;
                                                                 attributes:nil error:err];
             if ([NSData.data writeToFile:path options:NSDataWritingWithoutOverwriting error:err]) return YES;
             return NO;
-        } failureTitle:folder ? @"Couldn't Create Folder" : @"Couldn't Create File"];
+        } failureTitle:folder ? @"无法创建文件夹" : @"无法创建文件"];
     }]];
     [self presentViewController:ac animated:YES completion:nil];
 }
@@ -3033,14 +3033,14 @@ static const NSUInteger kFBSizeShownItems = 100;
         tf.autocapitalizationType = UITextAutocapitalizationTypeNone;
         tf.autocorrectionType = UITextAutocorrectionTypeNo;
     }];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     [ac addAction:[UIAlertAction actionWithTitle:@"Rename" style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) {
         NSString *name = [ac.textFields.firstObject.text stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
         if (!name.length || [name containsString:@"/"] || [name isEqualToString:e.name]) return;
         NSString *target = [self.path stringByAppendingPathComponent:name];
         [self performForEntry:e operation:^BOOL(NSError **err) {
             return [NSFileManager.defaultManager moveItemAtPath:e.path toPath:target error:err];
-        } failureTitle:@"Couldn't Rename"];
+        } failureTitle:@"无法重命名"];
     }]];
     [self presentViewController:ac animated:YES completion:nil];
 }
@@ -3052,33 +3052,33 @@ static const NSUInteger kFBSizeShownItems = 100;
         // Picked on the file queue, so two quick duplicates get two names.
         NSString *target = fb_unique_path(dir, e.name);
         return [NSFileManager.defaultManager copyItemAtPath:e.path toPath:target error:err];
-    } failureTitle:@"Couldn't Duplicate"];
+    } failureTitle:@"无法创建副本"];
 }
 
 - (void)confirmDelete:(FBEntry *)e
 {
     NSString *what = e.isDirectory && !e.isSymlink
-        ? [NSString stringWithFormat:@"The folder \"%@\" and everything in it will be deleted.", e.name]
-        : [NSString stringWithFormat:@"\"%@\" will be deleted.", e.name];
+        ? [NSString stringWithFormat:@"文件夹“%@”及其所有内容将被删除。", e.name]
+        : [NSString stringWithFormat:@"“%@”将被删除。", e.name];
     // Inside an app's own data container the worst case is that app losing
     // data; anywhere else the file may be one iOS needs to start up.
     NSString *canonical = fb_canonical_path(e.path);
     BOOL appData = [canonical hasPrefix:@"/private/var/mobile/Containers/Data/"] ||
                    [canonical hasPrefix:@"/private/var/mobile/Containers/Shared/AppGroup/"];
     NSString *message = appData
-        ? [what stringByAppendingString:@" This can't be undone."]
+        ? [what stringByAppendingString:@" 此操作无法撤销。"]
         : [what stringByAppendingString:@" This can't be undone.\n\nOnly delete files you know are safe to remove: "
-                                        @"deleting something iOS needs can leave the device unable to start up, "
-                                        @"and only a full restore fixes that."];
-    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"Delete?"
+                                        @"删除 iOS 需要的东西可能导致设备无法启动，"
+                                        @"只有完整恢复才能修复。"];
+    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"要删除吗？"
                                                                 message:message
                                                          preferredStyle:UIAlertControllerStyleAlert];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     [ac addAction:[UIAlertAction actionWithTitle:@"Delete" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *a) {
         [self performForEntry:e operation:^BOOL(NSError **err) {
             // A symlink is removed itself, never what it points to.
             return [NSFileManager.defaultManager removeItemAtPath:e.path error:err];
-        } failureTitle:@"Couldn't Delete"];
+        } failureTitle:@"无法删除"];
     }]];
     [self presentViewController:ac animated:YES completion:nil];
 }
@@ -3100,7 +3100,7 @@ static const NSUInteger kFBSizeShownItems = 100;
     NSString *dir = self.path;
     NSString *srcSlash = [fb_canonical_path(src) stringByAppendingString:@"/"];
     if ([[fb_canonical_path(dir) stringByAppendingString:@"/"] hasPrefix:srcSlash]) {
-        fb_alert(self, @"Can't Paste", @"A folder can't be pasted into itself.");
+        fb_alert(self, @"无法粘贴", @"文件夹无法粘贴到自身内部。");
         return;
     }
     __weak typeof(self) weakSelf = self;
@@ -3108,7 +3108,7 @@ static const NSUInteger kFBSizeShownItems = 100;
         struct stat st;
         if (lstat(src.fileSystemRepresentation, &st) != 0) {
             if (err) *err = [NSError errorWithDomain:NSPOSIXErrorDomain code:ENOENT
-                                   userInfo:@{ NSLocalizedDescriptionKey: @"The copied item no longer exists." }];
+                                   userInfo:@{ NSLocalizedDescriptionKey: @"复制的项目已不存在。" }];
             return NO;
         }
         // Moving within the same folder would only rename it to "name 2".
@@ -3121,34 +3121,34 @@ static const NSUInteger kFBSizeShownItems = 100;
             [weakSelf updateBarButtons];
         });
         return ok;
-    } failureTitle:cut ? @"Couldn't Move" : @"Couldn't Paste"];
+    } failureTitle:cut ? @"无法移动" : @"无法粘贴"];
 }
 
 // chmod for items mobile owns (mobile can't change anyone else's).
 - (void)promptPermissions:(FBEntry *)e
 {
     UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"Permissions"
-        message:[NSString stringWithFormat:@"%@\nCurrent: %@ (%03o). Enter the new mode in octal, e.g. 644 or 755.",
+        message:[NSString stringWithFormat:@"%@\n当前：%@（%03o）。请输入八进制新模式，例如 644 或 755。",
                  e.name, fb_mode_string(e.mode, e.isSymlink), e.mode & 07777]
         preferredStyle:UIAlertControllerStyleAlert];
     [ac addTextFieldWithConfigurationHandler:^(UITextField *tf) {
         tf.text = [NSString stringWithFormat:@"%03o", e.mode & 07777];
         tf.keyboardType = UIKeyboardTypeNumberPad;
     }];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     [ac addAction:[UIAlertAction actionWithTitle:@"Apply" style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) {
         NSString *text = ac.textFields.firstObject.text;
         unsigned long long value = 0;
         BOOL octal = text.length >= 3 && text.length <= 4 &&
                      [text rangeOfCharacterFromSet:[[NSCharacterSet characterSetWithCharactersInString:@"01234567"] invertedSet]].location == NSNotFound;
-        if (!octal) { fb_alert(self, @"Invalid Mode", @"Enter 3 or 4 octal digits, e.g. 644."); return; }
+        if (!octal) { fb_alert(self, @"无效模式", @"请输入 3 或 4 位八进制数字，例如 644。"); return; }
         for (NSUInteger i = 0; i < text.length; i++) value = value * 8 + (unsigned)([text characterAtIndex:i] - '0');
         mode_t mode = (mode_t)(value & 07777);
         [self performForEntry:e operation:^BOOL(NSError **err) {
             if (chmod(e.path.fileSystemRepresentation, mode) == 0) return YES;
             if (err) *err = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:nil];
             return NO;
-        } failureTitle:@"Couldn't Change Permissions"];
+        } failureTitle:@"无法更改权限"];
     }]];
     [self presentViewController:ac animated:YES completion:nil];
 }
@@ -3166,7 +3166,7 @@ static const NSUInteger kFBSizeShownItems = 100;
 {
     // The lock may have been closed while the picker was open.
     if (!filebrowser_write_enabled() || self.loadedViaRoot) {
-        fb_alert(self, @"Not Imported", @"Changes are locked.");
+        fb_alert(self, @"未导入", @"更改已锁定。");
         return;
     }
     NSString *dir = self.path;
@@ -3177,7 +3177,7 @@ static const NSUInteger kFBSizeShownItems = 100;
         BOOL changed = NO;
         for (NSURL *url in urls) {
             if (!filebrowser_write_enabled()) {   // locked mid-import: stop before the next item
-                [failed addObject:[NSString stringWithFormat:@"%@: changes were locked", url.lastPathComponent]];
+                [failed addObject:[NSString stringWithFormat:@"%@：更改已被锁定", url.lastPathComponent]];
                 continue;
             }
             NSString *target = fb_unique_path(dir, url.lastPathComponent);
@@ -3194,15 +3194,15 @@ static const NSUInteger kFBSizeShownItems = 100;
                     NSError *cleanupError = nil;
                     [NSFileManager.defaultManager removeItemAtPath:target error:&cleanupError];
                     if (lstat(target.fileSystemRepresentation, &partial) == 0)
-                        failure = [NSString stringWithFormat:@"%@ Cleanup failed: %@", failure ?: @"Import failed.", cleanupError.localizedDescription ?: @"the partial item remains"];
+                        failure = [NSString stringWithFormat:@"%@ 清理失败：%@", failure ?: @"导入失败。", cleanupError.localizedDescription ?: @"残留了不完整的项目"];
                 }
                 [failed addObject:[NSString stringWithFormat:@"%@: %@", url.lastPathComponent,
-                                   failure ?: @"Import failed."]];
+                                   failure ?: @"导入失败。"]];
             }
         }
         dispatch_async(dispatch_get_main_queue(), ^{
             if (changed) filebrowser_note_filesystem_changed();
-            if (failed.count) fb_alert(self, @"Import Incomplete", [failed componentsJoinedByString:@"\n"]);
+            if (failed.count) fb_alert(self, @"导入不完整", [failed componentsJoinedByString:@"\n"]);
             [self reload];
         });
     });
@@ -3251,7 +3251,7 @@ static const NSUInteger kFBSizeShownItems = 100;
             me.loadedOptionsGeneration = optionsGen;
             me.loadedFsGeneration = fsGen;
             me.loadedViaRoot = viaRoot;
-            me.navigationItem.prompt = viaRoot ? [me.path stringByAppendingString:@" · read as root"] : me.path;
+            me.navigationItem.prompt = viaRoot ? [me.path stringByAppendingString:@" · 以 root 读取"] : me.path;
             me.entries = entries;
             me.status = status;
             me.listingIncomplete = incomplete;
@@ -3286,13 +3286,13 @@ static const NSUInteger kFBSizeShownItems = 100;
                 [entries sortUsingComparator:order];
                 fb_annotate_containers(path, entries, YES);
                 NSString *rstatus = nil;
-                if (!rootEntries.count) rstatus = incomplete ? @"The folder could not be read completely." : @"Empty folder.";
-                else if (!entries.count) rstatus = [NSString stringWithFormat:@"%lu hidden item%@ (root). The ⋯ menu can show them.",
+                if (!rootEntries.count) rstatus = incomplete ? @"目录无法完整读取。" : @"空文件夹。";
+                else if (!entries.count) rstatus = [NSString stringWithFormat:@"%lu 个隐藏项目%@（root）。⋯ 菜单可以显示它们。",
                                                     (unsigned long)filteredOut, filteredOut == 1 ? @"" : @"s"];
                 publish(entries, rstatus, YES, incomplete);
                 return;
             }
-            status = rootErr ?: @"This folder is not readable, even as root.";
+            status = rootErr ?: @"此目录无法读取，即使用 root 也不行。";
         }
 
         // Hidden (dot) and unreadable items are left out unless enabled in
@@ -3321,23 +3321,23 @@ static const NSUInteger kFBSizeShownItems = 100;
                                                                               : err.userInfo[NSUnderlyingErrorKey];
             NSInteger code = [posix.domain isEqualToString:NSPOSIXErrorDomain] ? posix.code : 0;
             if (code == ENOENT || err.code == NSFileReadNoSuchFileError)
-                status = @"This folder does not exist.";
+                status = @"此目录不存在。";
             else if (code == ENOTDIR)
-                status = @"Not a folder.";
+                status = @"不是文件夹。";
             else if (code == EACCES || code == EPERM || err.code == NSFileReadNoPermissionError)
-                status = @"Permission denied. Turn on Root Access (read-only) in the ⋯ menu to read it as root.";
+                status = @"权限被拒。请在 ⋯ 菜单打开 Root 访问（只读）以 root 读取。";
             else
-                status = err.localizedDescription ?: @"Couldn't read this folder.";
+                status = err.localizedDescription ?: @"无法读取此目录。";
         } else if (!names) {
             // status already set by the root fallback above
         } else if (!names.count) {
-            status = @"Empty folder.";
+            status = @"空文件夹。";
         } else if (!entries.count) {
-            status = [NSString stringWithFormat:@"%lu hidden or inaccessible item%@. The ⋯ menu can show them.",
+            status = [NSString stringWithFormat:@"%lu 个隐藏或无法访问的项目%@。⋯ 菜单可以显示它们。",
                       (unsigned long)filteredOut, filteredOut == 1 ? @"" : @"s"];
         }
         if (ordinaryIncomplete) {
-            status = [NSString stringWithFormat:@"Listing incomplete: the first %lu entries are shown.",
+            status = [NSString stringWithFormat:@"列表不完整：仅显示前 %lu 项。",
                       (unsigned long)kFBMaxOrdinaryEntries];
         }
         publish(entries, status, NO, ordinaryIncomplete);
@@ -3357,7 +3357,7 @@ static const NSUInteger kFBSizeShownItems = 100;
     [self.refreshControl endRefreshing];
     if (self.unlocking) return;
     self.unlocking = YES;
-    self.status = @"Lifting the filesystem sandbox through SpringBoard… (one time per app launch)";
+    self.status = @"正在通过 SpringBoard 解除文件系统沙盒…（每次启动应用一次）";
     [self applyFilter];
     __weak typeof(self) weakSelf = self;
     settings_unlock_filesystem_async(NO, ^(BOOL ok, NSString *message) {
@@ -3369,10 +3369,10 @@ static const NSUInteger kFBSizeShownItems = 100;
             return;
         }
         BOOL needsRun = [message isEqualToString:kSettingsFullExploitRequiredMessage];
-        s.status = needsRun ? kSettingsNoKernelAccessHint : (message ?: @"Filesystem access is not available.");
+        s.status = needsRun ? kSettingsNoKernelAccessHint : (message ?: @"文件系统访问不可用。");
         [s applyFilter];
         if (needsRun) {
-            settings_tool_needs_exploit(s, s.tableView, @"The File Browser", ^{
+            settings_tool_needs_exploit(s, s.tableView, @"文件浏览器", ^{
                 [weakSelf unlockThenReloadAllowingFullExploit:NO];
             });
         }
@@ -3411,7 +3411,7 @@ static const NSUInteger kFBSizeShownItems = 100;
         UILabel *note = nil;
         if (self.searchTruncated && self.shown.count) {
             note = [UILabel new];
-            note.text = [NSString stringWithFormat:@"Showing the first %lu matches (search stops at %lu results, %lu entries or %.0f s). Narrow the search or start deeper.",
+            note.text = [NSString stringWithFormat:@"显示前 %lu 个匹配（搜索在 %lu 个结果、%lu 个条目或 %.0f 秒处停止）。请缩小范围或从更深的目录开始。",
                          (unsigned long)self.shown.count, (unsigned long)kFBSearchMaxResults,
                          (unsigned long)kFBSearchMaxVisited, kFBSearchMaxSeconds];
             note.font = [UIFont systemFontOfSize:13];
@@ -3439,7 +3439,7 @@ static const NSUInteger kFBSizeShownItems = 100;
     // A cut-short listing is a prefix of the folder, not all of it.
     if (self.listingIncomplete && self.entries.count) {
         UILabel *note = [UILabel new];
-        note.text = [NSString stringWithFormat:@"Listing incomplete: only %lu entries are shown; reload or narrow the folder.",
+        note.text = [NSString stringWithFormat:@"列表不完整：仅显示 %lu 个条目；请重新加载或缩小目录范围。",
                      (unsigned long)self.entries.count];
         note.font = [UIFont systemFontOfSize:13];
         note.textColor = UIColor.systemOrangeColor;
@@ -3463,7 +3463,7 @@ static const NSUInteger kFBSizeShownItems = 100;
 
 - (void)searchBar:(UISearchBar *)searchBar selectedScopeButtonIndexDidChange:(NSInteger)selectedScope
 {
-    searchBar.placeholder = selectedScope == 1 ? @"Search this folder and below" : @"Filter this folder";
+    searchBar.placeholder = selectedScope == 1 ? @"搜索此目录及子目录" : @"筛选此文件夹";
     [self updateSearchResultsForSearchController:self.searchCtrl];
 }
 
@@ -3518,32 +3518,32 @@ static const NSUInteger kFBSizeShownItems = 100;
     FBAppContainer *c = self.container;
     if (added) {
         cleaner_custom_target_remove(c.identifier, relative);
-        fb_alert(self, @"Removed from Cache Cleaner", [NSString stringWithFormat:@"%@ is no longer offered in the Cache Cleaner. Nothing was deleted.", e.name]);
+        fb_alert(self, @"已从缓存清理器移除", [NSString stringWithFormat:@"缓存清理器不再提供 %@。未删除任何内容。", e.name]);
         return;
     }
     NSString *what = e.isDirectory
-        ? [NSString stringWithFormat:@"The Cache Cleaner will offer to empty \"%@\" of %@ (the folder itself stays).", e.name, c.displayName]
-        : [NSString stringWithFormat:@"The Cache Cleaner will offer to delete \"%@\" of %@.", e.name, c.displayName];
-    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"Add to Cache Cleaner?"
+        ? [NSString stringWithFormat:@"缓存清理器将提供清空“%@”（%@）的选项（目录本身保留）。", e.name, c.displayName]
+        : [NSString stringWithFormat:@"缓存清理器将提供删除“%@”（%@）的选项。", e.name, c.displayName];
+    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"要添加到缓存清理器吗？"
         message:[what stringByAppendingString:@"\n\nAlways Select: it's selected after every scan and by Select All, like caches. "
                  @"Select by Hand: you pick it each time. You can change this later by touching and holding it in the Cache Cleaner.\n\n"
-                 @"Only add what the app can do without: anything it keeps there (drafts, downloads, logins) is gone once cleaned."]
+                 @"只添加应用离开也能正常工作的内容：它保存在里面的东西（草稿、下载、登录状态）清理后就没了。"]
         preferredStyle:UIAlertControllerStyleAlert];
     __weak typeof(self) weakSelf = self;
     void (^add)(BOOL) = ^(BOOL autoSelect) {
         NSString *error = nil;
         if (!cleaner_custom_target_add(c.identifier, c.displayName, relative, !e.isDirectory, autoSelect, &error))
-            fb_alert(weakSelf, @"Not Added", error);
+            fb_alert(weakSelf, @"未添加", error);
     };
-    [ac addAction:[UIAlertAction actionWithTitle:@"Always Select" style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) { add(YES); }]];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Select by Hand" style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) { add(NO); }]];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"自动选择" style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) { add(YES); }]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"手动选择" style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) { add(NO); }]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     [self presentViewController:ac animated:YES completion:nil];
 }
 
 - (void)goToPath
 {
-    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"Go to Folder"
+    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"前往目录"
                                                                 message:nil
                                                          preferredStyle:UIAlertControllerStyleAlert];
     [ac addTextFieldWithConfigurationHandler:^(UITextField *tf) {
@@ -3552,7 +3552,7 @@ static const NSUInteger kFBSizeShownItems = 100;
         tf.autocorrectionType = UITextAutocorrectionTypeNo;
         tf.clearButtonMode = UITextFieldViewModeWhileEditing;
     }];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     [ac addAction:[UIAlertAction actionWithTitle:@"Go" style:UIAlertActionStyleDefault handler:^(UIAlertAction *a) {
         NSString *target = [ac.textFields.firstObject.text stringByStandardizingPath];
         if (!target.length) return;
@@ -3580,8 +3580,8 @@ static const NSUInteger kFBSizeShownItems = 100;
 
     if (!self.shown.count) {
         cell.textLabel.text = [self searchingSubfolders]
-            ? (self.searching ? @"Searching…" : @"No matches in this folder or below.")
-            : (self.status ?: (self.filter.length ? @"No matches." : @"Loading…"));
+            ? (self.searching ? @"正在搜索…" : @"此目录及子目录中无匹配。")
+            : (self.status ?: (self.filter.length ? @"无匹配结果。" : @"正在加载…"));
         cell.textLabel.numberOfLines = 0;
         cell.textLabel.textColor = UIColor.secondaryLabelColor;
         cell.detailTextLabel.text = nil;
@@ -3610,7 +3610,7 @@ static const NSUInteger kFBSizeShownItems = 100;
     if (e.searchLocation) {
         cell.detailTextLabel.text = [@"in " stringByAppendingString:e.searchLocation];
     } else if (e.statFailed) {
-        cell.detailTextLabel.text = @"(no information)";
+        cell.detailTextLabel.text = @"（无信息）";
     } else {
         NSString *size = e.isDirectory ? @"" : [fb_size_string(e.size) stringByAppendingString:@"  "];
         cell.detailTextLabel.text = [NSString stringWithFormat:@"%@%@  %@ %@",
@@ -3743,11 +3743,11 @@ static const NSUInteger kFBSizeShownItems = 100;
     return [UIContextMenuConfiguration configurationWithIdentifier:nil
                                                    previewProvider:nil
                                                     actionProvider:^UIMenu *(NSArray<UIMenuElement *> *suggested) {
-        UIAction *copy = [UIAction actionWithTitle:@"Copy Path"
+        UIAction *copy = [UIAction actionWithTitle:@"拷贝路径"
                                              image:[UIImage systemImageNamed:@"doc.on.doc"]
                                         identifier:nil
                                            handler:^(UIAction *a) { UIPasteboard.generalPasteboard.string = e.path; }];
-        UIAction *info = [UIAction actionWithTitle:@"Open as Text / Hex / Info"
+        UIAction *info = [UIAction actionWithTitle:@"以文本 / 十六进制 / 信息打开"
                                              image:[UIImage systemImageNamed:@"info.circle"]
                                         identifier:nil
                                            handler:^(UIAction *a) {
@@ -3756,11 +3756,11 @@ static const NSUInteger kFBSizeShownItems = 100;
         }];
         NSMutableArray<UIMenuElement *> *items = [NSMutableArray arrayWithObject:copy];
         if (e.isDirectory && !e.isSymlink && !e.statFailed)
-            [items addObject:[UIAction actionWithTitle:@"Folder Size" image:[UIImage systemImageNamed:@"chart.pie"]
+            [items addObject:[UIAction actionWithTitle:@"目录大小" image:[UIImage systemImageNamed:@"chart.pie"]
                                             identifier:nil handler:^(UIAction *a) { [self showFolderSize:e.path]; }]];
         if (e.isDirectory && !e.isSymlink) {
             BOOL favorite = fb_is_favorite(e.path);
-            [items addObject:[UIAction actionWithTitle:favorite ? @"Remove from Favorites" : @"Add to Favorites"
+            [items addObject:[UIAction actionWithTitle:favorite ? @"从个人收藏移除" : @"添加到个人收藏"
                                                  image:[UIImage systemImageNamed:favorite ? @"star.slash" : @"star"] identifier:nil
                                                handler:^(UIAction *a) { fb_set_favorite(e.path, !favorite); [self updateBarButtons]; }]];
         }
@@ -3770,7 +3770,7 @@ static const NSUInteger kFBSizeShownItems = 100;
         if (relative) {
             FBAppContainer *owner = self.container;
             BOOL added = cleaner_custom_target_contains(owner.identifier, relative);
-            UIAction *cleaner = [UIAction actionWithTitle:added ? @"Remove from Cache Cleaner" : @"Add to Cache Cleaner"
+            UIAction *cleaner = [UIAction actionWithTitle:added ? @"从缓存清理器中移除" : @"添加到缓存清理器"
                                                     image:[UIImage systemImageNamed:added ? @"minus.circle" : @"sparkles"] identifier:nil
                                                   handler:^(UIAction *a) { [self toggleCleanerTarget:e relative:relative added:added]; }];
             [items addObject:cleaner];
@@ -3778,7 +3778,7 @@ static const NSUInteger kFBSizeShownItems = 100;
         if (!e.isDirectory) {
             [items addObject:info];
             // AirDrop, Mail, Save to Files … a copy, never the original.
-            [items addObject:[UIAction actionWithTitle:@"Share…" image:[UIImage systemImageNamed:@"square.and.arrow.up"]
+            [items addObject:[UIAction actionWithTitle:@"分享…" image:[UIImage systemImageNamed:@"square.and.arrow.up"]
                                             identifier:nil handler:^(UIAction *a) {
                 UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
                 filebrowser_share_file(self, e.path, e.viaRoot, nil, cell, nil);
@@ -3791,14 +3791,14 @@ static const NSUInteger kFBSizeShownItems = 100;
                 [items insertObject:[UIAction actionWithTitle:relatedTitle image:[UIImage systemImageNamed:@"arrow.triangle.swap"]
                                                    identifier:nil handler:^(UIAction *a) { [self openRelatedOf:c]; }]
                             atIndex:0];
-            [items addObject:[UIAction actionWithTitle:@"Copy Identifier" image:[UIImage systemImageNamed:@"number"]
+            [items addObject:[UIAction actionWithTitle:@"拷贝标识符" image:[UIImage systemImageNamed:@"number"]
                                             identifier:nil handler:^(UIAction *a) {
                 UIPasteboard.generalPasteboard.string = c.identifier;
             }]];
         }
         if (e.searchLocation) {
             NSString *folder = e.path.stringByDeletingLastPathComponent;
-            [items insertObject:[UIAction actionWithTitle:@"Show in Folder" image:[UIImage systemImageNamed:@"folder"]
+            [items insertObject:[UIAction actionWithTitle:@"在所在目录中显示" image:[UIImage systemImageNamed:@"folder"]
                                                identifier:nil handler:^(UIAction *a) {
                 [self.navigationController pushViewController:[[FileBrowserViewController alloc] initWithPath:folder]
                                                      animated:YES];
@@ -3823,7 +3823,7 @@ static const NSUInteger kFBSizeShownItems = 100;
                                            identifier:nil handler:^(UIAction *a) { [self duplicate:e]; }];
             NSMutableArray *edit = [NSMutableArray arrayWithObjects:ren, dup, nil];
             if (!e.statFailed && e.uid == getuid() && !e.isSymlink)
-                [edit addObject:[UIAction actionWithTitle:@"Permissions…" image:[UIImage systemImageNamed:@"lock.shield"]
+                [edit addObject:[UIAction actionWithTitle:@"权限…" image:[UIImage systemImageNamed:@"lock.shield"]
                                                identifier:nil handler:^(UIAction *a) { [self promptPermissions:e]; }]];
             UIAction *del = [UIAction actionWithTitle:@"Delete" image:[UIImage systemImageNamed:@"trash"]
                                            identifier:nil handler:^(UIAction *a) { [self confirmDelete:e]; }];

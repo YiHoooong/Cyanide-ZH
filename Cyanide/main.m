@@ -34,13 +34,13 @@
     icon.tintColor = UIColor.systemOrangeColor;
 
     UILabel *title = [UILabel new];
-    title.text = @"Not Supported";
+    title.text = @"不支持";
     title.font = [UIFont preferredFontForTextStyle:UIFontTextStyleTitle2];
     title.adjustsFontForContentSizeCategory = YES;
 
     UILabel *message = [UILabel new];
     message.text = [settings_unsupported_message() stringByAppendingString:
-                    @"\n\nCyanide can't run here. Please uninstall it."];
+                    @"\n\nCyanide 无法在此设备上运行。请卸载它。"];
     message.font = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
     message.adjustsFontForContentSizeCategory = YES;
     message.textColor = UIColor.secondaryLabelColor;

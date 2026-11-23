@@ -68,7 +68,7 @@ typedef NS_ENUM(NSInteger, CyanideNiceBarTrafficRange) {
             NSFontAttributeName: [UIFont systemFontOfSize:12],
             NSForegroundColorAttributeName: UIColor.secondaryLabelColor,
         };
-        [@"No traffic history yet" drawInRect:bounds withAttributes:attrs];
+        [@"暂无流量记录" drawInRect:bounds withAttributes:attrs];
         return;
     }
 
@@ -149,7 +149,7 @@ typedef NS_ENUM(NSInteger, CyanideNiceBarTrafficRange) {
                      items:(NSArray<CyanideNiceBarTrafficItem *> *)items
 {
     self.summaryLabel.text = title;
-    self.detailLabelView.text = [NSString stringWithFormat:@"Total %@", nicebarlite_format_traffic_bytes(total)];
+    self.detailLabelView.text = [NSString stringWithFormat:@"总计 %@", nicebarlite_format_traffic_bytes(total)];
     self.chartView.items = items;
 }
 
@@ -180,7 +180,7 @@ typedef NS_ENUM(NSInteger, CyanideNiceBarTrafficRange) {
 {
     self = [super initWithStyle:UITableViewStyleInsetGrouped];
     if (self) {
-        self.title = @"Traffic History";
+        self.title = @"流量统计";
         _selectedRange = CyanideNiceBarTrafficRangeWeek;
     }
     return self;
@@ -261,9 +261,9 @@ typedef NS_ENUM(NSInteger, CyanideNiceBarTrafficRange) {
 - (NSString *)rangeTitle
 {
     switch (self.selectedRange) {
-        case CyanideNiceBarTrafficRangeWeek: return @"This Week";
-        case CyanideNiceBarTrafficRangeMonth: return @"This Month";
-        case CyanideNiceBarTrafficRangeYear: return @"This Year";
+        case CyanideNiceBarTrafficRangeWeek: return @"本周";
+        case CyanideNiceBarTrafficRangeMonth: return @"本月";
+        case CyanideNiceBarTrafficRangeYear: return @"本年";
     }
     return @"Traffic";
 }
@@ -281,7 +281,7 @@ typedef NS_ENUM(NSInteger, CyanideNiceBarTrafficRange) {
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
 {
-    if (section == 2) return self.selectedRange == CyanideNiceBarTrafficRangeYear ? @"Monthly Details" : @"Daily Details";
+    if (section == 2) return self.selectedRange == CyanideNiceBarTrafficRangeYear ? @"按月明细" : @"按日明细";
     return nil;
 }
 
@@ -332,17 +332,17 @@ typedef NS_ENUM(NSInteger, CyanideNiceBarTrafficRange) {
 NSString *CyanideNiceBarSystemName(NSInteger item)
 {
     switch (item) {
-        case NiceBarLiteSystemBatteryTemp: return @"Battery temp";
-        case NiceBarLiteSystemFreeRAM: return @"Free RAM";
-        case NiceBarLiteSystemBatteryPercent: return @"Battery %";
-        case NiceBarLiteSystemNetworkSpeed: return @"Network speed";
+        case NiceBarLiteSystemBatteryTemp: return @"电池温度";
+        case NiceBarLiteSystemFreeRAM: return @"可用内存";
+        case NiceBarLiteSystemBatteryPercent: return @"电量百分比";
+        case NiceBarLiteSystemNetworkSpeed: return @"网速";
         case NiceBarLiteSystemUptime: return @"Uptime";
         case NiceBarLiteSystemDate: return @"Date";
-        case NiceBarLiteSystemLunarDate: return @"Lunar date";
-        case NiceBarLiteSystemTodayTraffic: return @"Today traffic";
-        case NiceBarLiteSystemCurrentIP: return @"Current IP";
-        case NiceBarLiteSystemFreeDisk: return @"Free disk";
-        case NiceBarLiteSystemThermalState: return @"Thermal state";
+        case NiceBarLiteSystemLunarDate: return @"农历日期";
+        case NiceBarLiteSystemTodayTraffic: return @"今日流量";
+        case NiceBarLiteSystemCurrentIP: return @"当前 IP";
+        case NiceBarLiteSystemFreeDisk: return @"可用磁盘";
+        case NiceBarLiteSystemThermalState: return @"温度状态";
     }
     return @"System";
 }
@@ -350,19 +350,19 @@ NSString *CyanideNiceBarSystemName(NSInteger item)
 NSString *CyanideNiceBarSystemDescription(NSInteger item)
 {
     switch (item) {
-        case NiceBarLiteSystemBatteryTemp: return @"Battery sensor temperature.";
-        case NiceBarLiteSystemFreeRAM: return @"Currently free memory.";
-        case NiceBarLiteSystemBatteryPercent: return @"Current battery percentage.";
-        case NiceBarLiteSystemNetworkSpeed: return @"Live download and upload speed.";
-        case NiceBarLiteSystemUptime: return @"Time since the device last booted.";
-        case NiceBarLiteSystemDate: return @"Current date.";
-        case NiceBarLiteSystemLunarDate: return @"Chinese lunar date.";
-        case NiceBarLiteSystemTodayTraffic: return @"Traffic counted today.";
-        case NiceBarLiteSystemCurrentIP: return @"Current Wi-Fi IPv4 address.";
-        case NiceBarLiteSystemFreeDisk: return @"Available storage.";
-        case NiceBarLiteSystemThermalState: return @"Device heat level.";
+        case NiceBarLiteSystemBatteryTemp: return @"电池传感器温度。";
+        case NiceBarLiteSystemFreeRAM: return @"当前可用内存。";
+        case NiceBarLiteSystemBatteryPercent: return @"当前电池百分比。";
+        case NiceBarLiteSystemNetworkSpeed: return @"实时上传和下载速度。";
+        case NiceBarLiteSystemUptime: return @"距上次开机的时长。";
+        case NiceBarLiteSystemDate: return @"当前日期。";
+        case NiceBarLiteSystemLunarDate: return @"农历日期。";
+        case NiceBarLiteSystemTodayTraffic: return @"今日累计流量。";
+        case NiceBarLiteSystemCurrentIP: return @"当前 Wi-Fi IPv4 地址。";
+        case NiceBarLiteSystemFreeDisk: return @"可用存储空间。";
+        case NiceBarLiteSystemThermalState: return @"设备热度。";
     }
-    return @"System status item.";
+    return @"系统状态项目。";
 }
 
 NSString *CyanideNiceBarSystemLanguageName(NSString *language)
@@ -372,19 +372,19 @@ NSString *CyanideNiceBarSystemLanguageName(NSString *language)
 
 NSString *CyanideNiceBarTimeFormatName(NSString *format)
 {
-    if ([format isEqualToString:@"HH:mm"]) return @"24h time";
-    if ([format isEqualToString:@"h:mm a"]) return @"12h time";
-    if ([format isEqualToString:@"HH:mm:ss"]) return @"Time + seconds";
-    if ([format isEqualToString:@"EEE HH:mm"]) return @"Weekday + time";
+    if ([format isEqualToString:@"HH:mm"]) return @"24 小时制";
+    if ([format isEqualToString:@"h:mm a"]) return @"12 小时制";
+    if ([format isEqualToString:@"HH:mm:ss"]) return @"时间 + 秒";
+    if ([format isEqualToString:@"EEE HH:mm"]) return @"星期 + 时间";
     if ([format isEqualToString:@"a h:mm"]) return @"中文上下午";
-    if ([format isEqualToString:@"M/d"]) return @"Short date";
+    if ([format isEqualToString:@"M/d"]) return @"短日期";
     if ([format isEqualToString:@"MM/dd"]) return @"Date";
-    if ([format isEqualToString:@"M/d EEE"]) return @"Date + weekday";
-    if ([format isEqualToString:@"MM-dd HH:mm"]) return @"Date + time";
+    if ([format isEqualToString:@"M/d EEE"]) return @"日期 + 星期";
+    if ([format isEqualToString:@"MM-dd HH:mm"]) return @"日期 + 时间";
     if ([format isEqualToString:@"M月d日"]) return @"中文日期";
     if ([format isEqualToString:@"cyanide:cn-date-weekday"]) return @"中文日期+星期";
     if ([format isEqualToString:@"M月d日 EEE"]) return @"中文日期+星期";
-    if ([format isEqualToString:@"cyanide:lunar"]) return @"Lunar date";
+    if ([format isEqualToString:@"cyanide:lunar"]) return @"农历日期";
     if ([format isEqualToString:@"cyanide:lunar-cn"]) return @"农历";
     if ([format isEqualToString:@"cyanide:lunar-cn-full"]) return @"农历完整";
     return format.length ? format : @"HH:mm";
@@ -429,7 +429,7 @@ NSString *CyanideNiceBarPreviewForTimeFormat(NSString *format)
         if (c.month > 0 && c.day > 0) {
             return [NSString stringWithFormat:@"L%02ld/%02ld", (long)c.month, (long)c.day];
         }
-        return @"Lunar --";
+        return @"农历 --";
     }
     if ([format isEqualToString:@"cyanide:lunar-cn"]) return CyanideNiceBarLunarCNPreview(NO);
     if ([format isEqualToString:@"cyanide:lunar-cn-full"]) return CyanideNiceBarLunarCNPreview(YES);
@@ -451,18 +451,18 @@ NSString *CyanideNiceBarPreviewForTimeFormat(NSString *format)
 static NSArray<NSDictionary<NSString *, NSString *> *> *CyanideNiceBarTimePresets(void)
 {
     return @[
-        @{ @"section": @"Time", @"title": @"24h time",       @"format": @"HH:mm" },
-        @{ @"section": @"Time", @"title": @"12h time",       @"format": @"h:mm a" },
-        @{ @"section": @"Time", @"title": @"Time + seconds", @"format": @"HH:mm:ss" },
-        @{ @"section": @"Time", @"title": @"Weekday + time", @"format": @"EEE HH:mm" },
-        @{ @"section": @"Date", @"title": @"Short date",     @"format": @"M/d" },
+        @{ @"section": @"Time", @"title": @"24 小时制",       @"format": @"HH:mm" },
+        @{ @"section": @"Time", @"title": @"12 小时制",       @"format": @"h:mm a" },
+        @{ @"section": @"Time", @"title": @"时间 + 秒", @"format": @"HH:mm:ss" },
+        @{ @"section": @"Time", @"title": @"星期 + 时间", @"format": @"EEE HH:mm" },
+        @{ @"section": @"Date", @"title": @"短日期",     @"format": @"M/d" },
         @{ @"section": @"Date", @"title": @"Date",           @"format": @"MM/dd" },
-        @{ @"section": @"Date", @"title": @"Date + weekday", @"format": @"M/d EEE" },
-        @{ @"section": @"Date", @"title": @"Date + time",    @"format": @"MM-dd HH:mm" },
+        @{ @"section": @"Date", @"title": @"日期 + 星期", @"format": @"M/d EEE" },
+        @{ @"section": @"Date", @"title": @"日期 + 时间",    @"format": @"MM-dd HH:mm" },
         @{ @"section": @"中文", @"title": @"中文时间",        @"format": @"a h:mm" },
         @{ @"section": @"中文", @"title": @"中文日期",        @"format": @"M月d日" },
         @{ @"section": @"中文", @"title": @"中文日期+星期",    @"format": @"cyanide:cn-date-weekday" },
-        @{ @"section": @"农历", @"title": @"Lunar date",     @"format": @"cyanide:lunar" },
+        @{ @"section": @"农历", @"title": @"农历日期",     @"format": @"cyanide:lunar" },
         @{ @"section": @"农历", @"title": @"农历",           @"format": @"cyanide:lunar-cn" },
         @{ @"section": @"农历", @"title": @"农历完整",        @"format": @"cyanide:lunar-cn-full" },
     ];
@@ -483,7 +483,7 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *CyanideNiceBarTimePreset
 {
     self = [super initWithStyle:UITableViewStyleInsetGrouped];
     if (self) {
-        self.title = slotTitle.length ? slotTitle : @"Date / Time";
+        self.title = slotTitle.length ? slotTitle : @"日期 / 时间";
         self.selectedFormat = selectedFormat.length ? selectedFormat : @"HH:mm";
         self.selection = selection;
         NSMutableArray<NSString *> *titles = [NSMutableArray array];
@@ -560,7 +560,7 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *CyanideNiceBarTimePreset
 {
     self = [super initWithStyle:UITableViewStyleInsetGrouped];
     if (self) {
-        self.title = slotTitle.length ? slotTitle : @"System Item";
+        self.title = slotTitle.length ? slotTitle : @"系统项目";
         self.selectedItem = selectedItem;
         self.selectedLanguage = selectedLanguage.length ? selectedLanguage : @"en";
         self.selection = selection;
@@ -580,7 +580,7 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *CyanideNiceBarTimePreset
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
 {
-    return section == 0 ? @"System Item" : @"Thermal State Language";
+    return section == 0 ? @"系统项目" : @"温度状态语言";
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -596,7 +596,7 @@ static NSArray<NSDictionary<NSString *, NSString *> *> *CyanideNiceBarTimePreset
     } else {
         NSString *language = indexPath.row == 0 ? @"en" : @"zh";
         cell.textLabel.text = CyanideNiceBarSystemLanguageName(language);
-        cell.detailTextLabel.text = indexPath.row == 0 ? @"Shows thermal state in English." : @"Shows thermal state in Chinese.";
+        cell.detailTextLabel.text = indexPath.row == 0 ? @"以英文显示温度状态。" : @"以中文显示温度状态。";
         cell.accessoryType = [language isEqualToString:self.selectedLanguage] &&
                              self.selectedItem == NiceBarLiteSystemThermalState
             ? UITableViewCellAccessoryCheckmark
@@ -655,35 +655,35 @@ NSString *CyanideNiceBarWeatherSummary(NSInteger code, BOOL chinese)
         }
     }
     switch (code) {
-        case 0: return @"☀️ Clear";
-        case 1: return @"🌤️ Mostly clear";
-        case 2: return @"⛅️ Partly cloudy";
-        case 3: return @"☁️ Cloudy";
+        case 0: return @"☀️ 晴";
+        case 1: return @"🌤️ 大部晴朗";
+        case 2: return @"⛅️ 局部多云";
+        case 3: return @"☁️ 多云";
         case 45:
-        case 48: return @"🌫️ Fog";
+        case 48: return @"🌫️ 雾";
         case 51:
         case 53:
-        case 55: return @"🌦️ Drizzle";
+        case 55: return @"🌦️ 毛毛雨";
         case 56:
-        case 57: return @"🌧️ Freezing drizzle";
+        case 57: return @"🌧️ 冻毛毛雨";
         case 61:
         case 63:
-        case 65: return @"🌧️ Rain";
+        case 65: return @"🌧️ 雨";
         case 66:
-        case 67: return @"🌧️ Freezing rain";
+        case 67: return @"🌧️ 冻雨";
         case 71:
         case 73:
         case 75:
-        case 77: return @"❄️ Snow";
+        case 77: return @"❄️ 雪";
         case 80:
         case 81:
-        case 82: return @"🌦️ Rain showers";
+        case 82: return @"🌦️ 阵雨";
         case 85:
-        case 86: return @"🌨️ Snow showers";
-        case 95: return @"⛈️ Thunderstorm";
+        case 86: return @"🌨️ 阵雪";
+        case 95: return @"⛈️ 雷雨";
         case 96:
-        case 99: return @"⛈️ Storm hail";
-        default: return @"🌡️ Weather";
+        case 99: return @"⛈️ 雷雨冰雹";
+        default: return @"🌡️ 天气";
     }
 }
 
@@ -756,7 +756,7 @@ NSString *CyanideNiceBarWeatherSummary(NSInteger code, BOOL chinese)
         }
         if (status == kCLAuthorizationStatusDenied || status == kCLAuthorizationStatusRestricted) {
             log_user("[NICEBAR] Weather failed: location authorization status=%d.\n", (int)status);
-            [self finishWithOK:NO text:@"Loc denied" temp:nil code:nil fetched:NO];
+            [self finishWithOK:NO text:@"定位被拒" temp:nil code:nil fetched:NO];
             return;
         }
 

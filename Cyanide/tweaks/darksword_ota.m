@@ -451,7 +451,7 @@ static NSMutableDictionary *ota_read_local_preference(NSString *path)
                       format:nil
                        error:&plistError] mutableCopy];
     if (![plist isKindOfClass:NSMutableDictionary.class]) {
-        NSString *errorDesc = plistError ? plistError.description : @"not a dictionary";
+        NSString *errorDesc = plistError ? plistError.description : @"不是字典";
         printf("[OTA] customer catalog pref parse failed: %s error=%s\n",
                path.UTF8String, errorDesc.UTF8String);
         return nil;
@@ -609,7 +609,7 @@ static bool ota_clear_internal_mobilegestalt_flags(void)
                       format:nil
                        error:&plistError] mutableCopy];
     if (![mg isKindOfClass:NSMutableDictionary.class]) {
-        NSString *errorDesc = plistError ? plistError.description : @"not a dictionary";
+        NSString *errorDesc = plistError ? plistError.description : @"不是字典";
         printf("[OTA][MG] parse failed for %s error=%s\n",
                kOTAMobileGestaltPath.UTF8String, errorDesc.UTF8String);
         return false;

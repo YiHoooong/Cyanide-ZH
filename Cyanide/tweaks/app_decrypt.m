@@ -212,11 +212,11 @@ static BOOL ad_decrypt_range_in_springboard(NSString *src, NSString *dst, uint64
     int fdIn = -1, fdOut = -1;
     BOOL ok = NO;
     do {
-        if (!rsrc || !rdst) { *why = @"SpringBoard: no memory for the paths"; break; }
+        if (!rsrc || !rdst) { *why = @"SpringBoard：没有内存存放路径"; break; }
         fdIn = (int)r_dlsym_call(R_TIMEOUT, "open", rsrc, O_RDONLY | O_CLOEXEC, 0, 0, 0, 0, 0, 0);
-        if (fdIn < 0) { *why = [NSString stringWithFormat:@"SpringBoard: open failed (%s)", strerror(ad_sb_errno())]; break; }
+        if (fdIn < 0) { *why = [NSString stringWithFormat:@"SpringBoard：打开失败（%s）", strerror(ad_sb_errno())]; break; }
         fdOut = (int)r_dlsym_call(R_TIMEOUT, "open", rdst, O_WRONLY | O_CLOEXEC, 0, 0, 0, 0, 0, 0);
-        if (fdOut < 0) { *why = [NSString stringWithFormat:@"SpringBoard: can't write the copy (%s)", strerror(ad_sb_errno())]; break; }
+        if (fdOut < 0) { *why = [NSString stringWithFormat:@"SpringBoard：无法写入副本（%s）", strerror(ad_sb_errno())]; break; }
         struct { const char *name; size_t mapOff, addrOff, len, readOff; } variants[] = {
             { "page-range",        aligned, 0,     mapLen, delta },
             { "crypt-range",       aligned, delta, mapLen > delta ? mapLen - delta : 0, delta },
@@ -239,7 +239,7 @@ static BOOL ad_decrypt_range_in_springboard(NSString *src, NSString *dst, uint64
             uint64_t map = r_dlsym_call(R_TIMEOUT, "mmap", 0, mapSize, PROT_READ, MAP_PRIVATE,
                                         (uint64_t)fdIn, variants[i].mapOff, 0, 0);
             if (!map || map == (uint64_t)-1) {
-                *why = [NSString stringWithFormat:@"SpringBoard: mmap failed (%s)", strerror(ad_sb_errno())];
+                *why = [NSString stringWithFormat:@"SpringBoard：mmap 失败（%s）", strerror(ad_sb_errno())];
                 break;
             }
             uint64_t addr = map + variants[i].addrOff;
@@ -278,7 +278,7 @@ static BOOL ad_decrypt_range_in_springboard(NSString *src, NSString *dst, uint64
             }
             r_dlsym_call(R_TIMEOUT, "munmap", map, mapSize, 0, 0, 0, 0, 0, 0);
         }
-        if (!ok) *why = @"SpringBoard: no accepted mremap variant";
+        if (!ok) *why = @"SpringBoard：没有可用的 mremap 变体";
     } while (0);
     if (fdIn >= 0) r_dlsym_call(R_TIMEOUT, "close", (uint64_t)fdIn, 0, 0, 0, 0, 0, 0, 0);
     if (fdOut >= 0) r_dlsym_call(R_TIMEOUT, "close", (uint64_t)fdOut, 0, 0, 0, 0, 0, 0, 0);
@@ -339,7 +339,7 @@ static BOOL ad_try_mremap_variants(int fd, int out, uint64_t start, size_t page,
             size_t probe = MIN(sizeof(enc), (size_t)s->cryptsize);
             if (!ad_pread_all(fd, enc, probe, (off_t)start)) {
                 munmap(map, mapSize);
-                if (why) *why = @"reading the encrypted probe failed";
+                if (why) *why = @"读取加密探针失败";
                 return NO;
             }
             memcpy(dec, (const uint8_t *)map + variants[i].readOff, probe);
@@ -353,7 +353,7 @@ static BOOL ad_try_mremap_variants(int fd, int out, uint64_t start, size_t page,
         }
         munmap(map, mapSize);
     }
-    if (why) *why = @"mremap_encrypted: no accepted mapping variant";
+    if (why) *why = @"mremap_encrypted：没有可用的映射变体";
     return NO;
 }
 
@@ -466,16 +466,16 @@ static void ad_process_scan_once(ADProcess *proc, NSSet<NSData *> *wanted, BOOL 
 
 static BOOL ad_process_scan(ADProcess *proc, NSSet<NSData *> *wanted, NSString **why)
 {
-    if (!kexploit_krw_ready()) { *why = @"kernel access isn't active"; return NO; }
+    if (!kexploit_krw_ready()) { *why = @"内核访问未激活"; return NO; }
     char comm[64] = {0};
     uint64_t kproc = 0;
     if (procmgr_identity_for_pid(proc.pid, comm, sizeof(comm), &kproc) != 0 || !kproc) {
-        *why = [NSString stringWithFormat:@"process %d not found", proc.pid];
+        *why = [NSString stringWithFormat:@"未找到进程 %d", proc.pid];
         return NO;
     }
     uint64_t task = proc_task(kproc);
     proc.vmMap = task ? task_get_vm_map(task) : 0;
-    if (!proc.vmMap) { *why = @"the app's memory map wasn't found"; return NO; }
+    if (!proc.vmMap) { *why = @"未找到该应用的内存映射"; return NO; }
 
     NSUInteger execCount = 0;
     for (int attempt = 0; attempt < 3; attempt++) {
@@ -487,7 +487,7 @@ static BOOL ad_process_scan(ADProcess *proc, NSSet<NSData *> *wanted, NSString *
     }
     printf("[DECRYPT] process %d (%s): %lu executable entries, %lu of %lu images found\n", proc.pid, comm,
            (unsigned long)execCount, (unsigned long)proc.bases.count, (unsigned long)wanted.count);
-    if (!proc.bases.count) { *why = @"the app's code wasn't found in its memory"; return NO; }
+    if (!proc.bases.count) { *why = @"未在其内存中找到该应用的代码"; return NO; }
     return YES;
 }
 
@@ -496,7 +496,7 @@ static BOOL ad_process_scan(ADProcess *proc, NSSet<NSData *> *wanted, NSString *
 static BOOL ad_process_copy(ADProcess *proc, const ADEncryptedSlice *s, int out, NSString **why)
 {
     NSNumber *baseNum = s->hasUUID ? proc.bases[ad_uuid_key(s->uuid)] : nil;
-    if (!baseNum) { *why = @"not loaded in the running app"; return NO; }
+    if (!baseNum) { *why = @"未加载进运行中的应用"; return NO; }
     uint64_t base = baseNum.unsignedLongLongValue;   // address of the slice's file offset 0
     size_t page = (size_t)getpagesize();
     const struct VMEntryInfo *e = proc.entries.bytes;
@@ -508,12 +508,12 @@ static BOOL ad_process_copy(ADProcess *proc, const ADEncryptedSlice *s, int out,
         uint64_t pageAddr = addr & ~((uint64_t)page - 1);
         const struct VMEntryInfo *hit = NULL;
         for (NSUInteger i = 0; i < n; i++) if (pageAddr >= e[i].start && pageAddr < e[i].end) { hit = &e[i]; break; }
-        if (!hit) { *why = [NSString stringWithFormat:@"address 0x%llx isn't mapped in the app", addr]; return NO; }
+        if (!hit) { *why = [NSString stringWithFormat:@"地址 0x%llx 未映射在该应用中", addr]; return NO; }
         uint64_t chunk = MIN(hit->end - pageAddr, 1ULL << 20);
         uint64_t want = fileEnd - pos + (addr - pageAddr);
         chunk = MIN(chunk, (want + page - 1) & ~((uint64_t)page - 1));
         struct VMShmem m = vm_map_object_range(hit->object, hit->offset + (pageAddr - hit->start), chunk);
-        if (!m.used) { *why = [NSString stringWithFormat:@"mapping 0x%llx failed", pageAddr]; return NO; }
+        if (!m.used) { *why = [NSString stringWithFormat:@"映射 0x%llx 失败", pageAddr]; return NO; }
         uint64_t avail = chunk - (addr - pageAddr);
         uint64_t take = MIN(avail, fileEnd - pos);
         BOOL wrote = ad_pwrite_all(out, (const uint8_t *)m.localAddress + (addr - pageAddr), (size_t)take,
@@ -549,7 +549,7 @@ static int ad_launch_for_decrypt(NSString *bundleID, NSString **why)
         }
     }
     printf("[DECRYPT] background launch of %s failed; opening it\n", bundleID.UTF8String);
-    *why = @"the app didn't start in the background";
+    *why = @"应用未在后台启动";
     return 0;
 }
 
@@ -572,7 +572,7 @@ static BOOL ad_decrypt_file(NSString *src, NSString *dst, BOOL useSpringBoard, A
     NSMutableArray<NSValue *> *slices = [NSMutableArray array];
     ad_encrypted_slices(fd, (uint64_t)st.st_size, slices);
     if (!slices.count) { close(fd); return YES; }
-    if (!mremapEncrypted && !useSpringBoard) { close(fd); *errorOut = @"This iOS version has no mremap_encrypted."; return NO; }
+    if (!mremapEncrypted && !useSpringBoard) { close(fd); *errorOut = @"此 iOS 版本没有 mremap_encrypted。"; return NO; }
 
     NSError *err = nil;
     [NSFileManager.defaultManager removeItemAtPath:dst error:nil];
@@ -582,7 +582,7 @@ static BOOL ad_decrypt_file(NSString *src, NSString *dst, BOOL useSpringBoard, A
         return NO;
     }
     int out = open(dst.fileSystemRepresentation, O_RDWR | O_CLOEXEC);
-    if (out < 0) { close(fd); *errorOut = @"The working copy can't be written."; return NO; }
+    if (out < 0) { close(fd); *errorOut = @"无法写入工作副本。"; return NO; }
 
     size_t page = (size_t)getpagesize();
     BOOL ok = YES;
@@ -631,7 +631,7 @@ static BOOL ad_decrypt_file(NSString *src, NSString *dst, BOOL useSpringBoard, A
                    !useSpringBoard ? "not available" : sbOK ? "ok" : sbWhy.UTF8String);
             if (!sbOK) {
                 *errorOut = [NSString stringWithFormat:@"%@: iOS refused to decrypt it (Cyanide: %@%@)", src.lastPathComponent,
-                             localWhy, useSpringBoard ? [@"; " stringByAppendingString:sbWhy ?: @"SpringBoard failed"] : @""];
+                             localWhy, useSpringBoard ? [@"; " stringByAppendingString:sbWhy ?: @"SpringBoard 失败"] : @""];
                 ok = NO; break;
             }
         }
@@ -646,7 +646,7 @@ static BOOL ad_decrypt_file(NSString *src, NSString *dst, BOOL useSpringBoard, A
         }
         uint32_t zero = 0;
         ok = ad_pwrite_all(out, &zero, sizeof(zero), (off_t)s.cryptidFileOffset);
-        if (!ok) { *errorOut = @"Writing the decrypted copy failed."; break; }
+        if (!ok) { *errorOut = @"解密副本写入失败。"; break; }
         printf("[DECRYPT] %s: slice cpu=0x%x off=0x%llx size=0x%x decrypted\n",
                src.lastPathComponent.UTF8String, s.cputype, start, s.cryptsize);
     }
@@ -819,7 +819,7 @@ NSString *app_decrypt_make_ipa(NSDictionary *app, BOOL useSpringBoard,
     NSString *appPath = app[@"path"];
     NSFileManager *fm = NSFileManager.defaultManager;
     NSString *errorText = nil;
-    if (!appPath.length || ![fm fileExistsAtPath:appPath]) { if (errorOut) *errorOut = @"The app is no longer installed."; return nil; }
+    if (!appPath.length || ![fm fileExistsAtPath:appPath]) { if (errorOut) *errorOut = @"该应用已卸载。"; return nil; }
     void (^report)(NSString *, double) = ^(NSString *step, double f) { if (progress) progress(step, f); };
 
     // 1. Everything in the bundle (no symlinked folders followed), minus the
@@ -839,7 +839,7 @@ NSString *app_decrypt_make_ipa(NSDictionary *app, BOOL useSpringBoard,
     NSDictionary *attrs = [fm attributesOfFileSystemForPath:outDir error:nil];
     uint64_t freeBytes = [attrs[NSFileSystemFreeSize] unsignedLongLongValue];
     if (freeBytes && freeBytes < totalBytes + totalBytes / 5 + 50ULL * 1024 * 1024) {
-        if (errorOut) *errorOut = [NSString stringWithFormat:@"Not enough free space: the IPA needs about %@.",
+        if (errorOut) *errorOut = [NSString stringWithFormat:@"可用空间不足：IPA 大约需要 %@。",
                                    [NSByteCountFormatter stringFromByteCount:(long long)totalBytes countStyle:NSByteCountFormatterCountStyleFile]];
         return nil;
     }
@@ -895,7 +895,7 @@ NSString *app_decrypt_make_ipa(NSDictionary *app, BOOL useSpringBoard,
             }
         }
         NSString *why = nil;
-        report(@"Starting the app in the background", 0.05);
+        report(@"正在后台启动应用", 0.05);
         int pid = [app[@"bundleID"] length] ? ad_launch_for_decrypt(app[@"bundleID"], &why) : 0;
         if (pid > 0) {
             ADProcess *p = [ADProcess new];
@@ -949,7 +949,7 @@ NSString *app_decrypt_make_ipa(NSDictionary *app, BOOL useSpringBoard,
         }
         if (decrypted) replaced[rel] = dst;
     }
-    if (!errorText && replaced.count == 0) errorText = @"Nothing in this app is encrypted, or it couldn't be read.";
+    if (!errorText && replaced.count == 0) errorText = @"此应用没有加密内容，或无法读取。";
     if (errorText) {
         [fm removeItemAtPath:work error:nil];
         log_user("[DECRYPT] Failed: %s\n", errorText.UTF8String);
@@ -963,7 +963,7 @@ NSString *app_decrypt_make_ipa(NSDictionary *app, BOOL useSpringBoard,
                      [NSString stringWithFormat:@"%@_%@_decrypted.ipa", ad_safe_name(app[@"name"] ?: @"App"), ad_safe_name(version)]];
     NSString *partial = [ipa stringByAppendingString:@".part"];
     int fd = open(partial.fileSystemRepresentation, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0644);
-    if (fd < 0) { [fm removeItemAtPath:work error:nil]; if (errorOut) *errorOut = @"The IPA can't be created."; return nil; }
+    if (fd < 0) { [fm removeItemAtPath:work error:nil]; if (errorOut) *errorOut = @"无法创建 IPA。"; return nil; }
     ADZipWriter *zip = [ADZipWriter new];
     zip.fd = fd;
     zip.central = [NSMutableData data];
@@ -995,7 +995,7 @@ NSString *app_decrypt_make_ipa(NSDictionary *app, BOOL useSpringBoard,
             struct stat fs;
             uint32_t crc = 0;
             if (stat(from.fileSystemRepresentation, &fs) != 0 || !ad_crc_file(from, &crc)) {
-                errorText = [NSString stringWithFormat:@"%@ can't be read.", rel];
+                errorText = [NSString stringWithFormat:@"无法读取 %@。", rel];
                 ok = NO; break;
             }
             report([@"Packing " stringByAppendingString:rel.lastPathComponent],
@@ -1015,20 +1015,20 @@ NSString *app_decrypt_make_ipa(NSDictionary *app, BOOL useSpringBoard,
     [fm removeItemAtPath:work error:nil];
     if (!ok) {
         [fm removeItemAtPath:partial error:nil];
-        if (errorOut) *errorOut = errorText ?: @"Writing the IPA failed (disk full?).";
+        if (errorOut) *errorOut = errorText ?: @"IPA 写入失败（磁盘满了？）。";
         return nil;
     }
     [fm removeItemAtPath:ipa error:nil];
     if (![fm moveItemAtPath:partial toPath:ipa error:nil]) {
-        if (errorOut) *errorOut = @"The finished IPA couldn't be saved.";
+        if (errorOut) *errorOut = @"完成的 IPA 无法保存。";
         return nil;
     }
     report(@"Done", 1.0);
     if (droppedBundles.count && errorOut) {   // not an error: tells the caller what was left out
         NSMutableArray<NSString *> *names = [NSMutableArray array];
         for (NSString *bundle in droppedBundles)
-            [names addObject:[bundle isEqualToString:@"Watch"] ? @"the Watch app" : bundle.lastPathComponent];
-        *errorOut = [NSString stringWithFormat:@"Left out (couldn't be decrypted): %@", [names componentsJoinedByString:@", "]];
+            [names addObject:[bundle isEqualToString:@"Watch"] ? @"Watch 应用" : bundle.lastPathComponent];
+        *errorOut = [NSString stringWithFormat:@"未包含（无法解密）：%@", [names componentsJoinedByString:@", "]];
     }
     log_user("[DECRYPT] %s: %lu binar%s decrypted -> %s\n", [app[@"name"] UTF8String],
              (unsigned long)replaced.count, replaced.count == 1 ? "y" : "ies", ipa.lastPathComponent.UTF8String);

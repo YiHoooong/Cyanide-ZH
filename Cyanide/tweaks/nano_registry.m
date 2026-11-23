@@ -422,7 +422,7 @@ static NSString *nano_registry_join_limited_strings(NSArray *values, NSUInteger 
         joined = [joined stringByAppendingFormat:@",...(+%lu)",
                   (unsigned long)(strings.count - out.count)];
     }
-    return joined.length ? joined : @"(none)";
+    return joined.length ? joined : @"（无）";
 }
 
 static NSString *nano_registry_join_limited_key_values(NSDictionary *dict, NSUInteger limit)
@@ -447,7 +447,7 @@ static NSString *nano_registry_join_limited_key_values(NSDictionary *dict, NSUIn
         joined = [joined stringByAppendingFormat:@",...(+%lu)",
                   (unsigned long)(keys.count - pairs.count)];
     }
-    return joined.length ? joined : @"(none)";
+    return joined.length ? joined : @"（无）";
 }
 
 static uint64_t nano_registry_remote_objc_constant(const char *symbol)

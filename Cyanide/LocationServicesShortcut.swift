@@ -2,7 +2,7 @@
 //  LocationServicesShortcut.swift
 //  Cyanide
 //
-//  "Location Services" action for Shortcuts, Siri and the Action button,
+//  "定位服务" action for Shortcuts, Siri and the Action button,
 //  iOS 17+ (custom Control Center controls need iOS 18; this is the iOS 17
 //  way to reach the same switch). Opens Cyanide and runs the same request as
 //  the Control Center toggle (CyanideLocationRequest, shared with the
@@ -17,17 +17,17 @@ enum LocationServicesAction: String, AppEnum {
     case on
     case off
 
-    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Location Services Action"
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "定位服务操作"
     static let caseDisplayRepresentations: [LocationServicesAction: DisplayRepresentation] = [
         .toggle: "Toggle",
-        .on: "Turn On",
-        .off: "Turn Off",
+        .on: "打开",
+        .off: "关闭",
     ]
 }
 
 struct LocationServicesShortcutIntent: AppIntent {
-    static let title: LocalizedStringResource = "Location Services"
-    static let description = IntentDescription("Opens Cyanide to turn Location Services on, off, or toggle it.")
+    static let title: LocalizedStringResource = "定位服务"
+    static let description = IntentDescription("打开 Cyanide 以打开、关闭或切换定位服务。")
     static let openAppWhenRun: Bool = true
 
     @Parameter(title: "Action", default: .toggle)
@@ -53,16 +53,16 @@ struct CyanideAppShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: LocationServicesShortcutIntent(),
             phrases: [
-                "Toggle Location Services with \(.applicationName)",
+                "通过 \(.applicationName) 切换定位服务",
                 "\(.applicationName) Location Services",
             ],
-            shortTitle: "Location Services",
+            shortTitle: "定位服务",
             systemImageName: "location.fill"
         )
         AppShortcut(
             intent: RespringIntent(),
             phrases: [
-                "Respring with \(.applicationName)",
+                "通过 \(.applicationName) 重加载",
                 "\(.applicationName) Respring",
             ],
             shortTitle: "Respring",
@@ -71,7 +71,7 @@ struct CyanideAppShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: RebootIntent(),
             phrases: [
-                "Reboot with \(.applicationName)",
+                "通过 \(.applicationName) 重启",
                 "\(.applicationName) Reboot",
             ],
             shortTitle: "Reboot",
@@ -80,10 +80,10 @@ struct CyanideAppShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: UnlockCarPlayIntent(),
             phrases: [
-                "Unlock CarPlay with \(.applicationName)",
+                "通过 \(.applicationName) 解锁 CarPlay",
                 "\(.applicationName) CarPlay",
             ],
-            shortTitle: "CarPlay without Siri",
+            shortTitle: "无 Siri 使用 CarPlay",
             systemImageName: "car.fill"
         )
     }

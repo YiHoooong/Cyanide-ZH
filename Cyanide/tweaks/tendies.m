@@ -250,12 +250,12 @@ BOOL tendies_install(NSArray<NSURL *> *files, NSUInteger *added, NSString **mess
     if (!message) message = &dummy;
     if (added) *added = 0;
     if (!darksword_prepare_var_rw()) {
-        *message = @"No access to /private/var (the sandbox could not be lifted).";
+        *message = @"无法访问 /private/var（沙盒未能解除）。";
         return NO;
     }
     NSString *container = td_posterboard_container();
     if (!container) {
-        *message = @"PosterBoard's data folder wasn't found.";
+        *message = @"未找到 PosterBoard 的数据目录。";
         return NO;
     }
     NSString *extensions = td_extensions_root(container);
@@ -272,18 +272,18 @@ BOOL tendies_install(NSArray<NSURL *> *files, NSUInteger *added, NSString **mess
                              [@"tendies-" stringByAppendingString:NSUUID.UUID.UUIDString]];
         NSError *error = nil;
         if (!SBLExtractArchiveToDirectory(file, staging, &error)) {
-            [problems addObject:[NSString stringWithFormat:@"%@: not a valid .tendies file (%@)", name,
+            [problems addObject:[NSString stringWithFormat:@"%@：不是有效的 .tendies 文件（%@）", name,
                                  error.localizedDescription ?: @"unreadable"]];
             continue;
         }
         NSArray *descriptors = td_find_descriptors(staging);
         if (descriptors.count == 0) {
-            [problems addObject:[NSString stringWithFormat:@"%@: no wallpapers inside", name]];
+            [problems addObject:[NSString stringWithFormat:@"%@：内部没有壁纸", name]];
             [fm removeItemAtPath:staging error:nil];
             continue;
         }
         if (total + descriptors.count > kTDMaxPerInstall) {
-            [problems addObject:[NSString stringWithFormat:@"%@: skipped, at most %lu wallpapers per install",
+            [problems addObject:[NSString stringWithFormat:@"%@：已跳过，每次安装最多 %lu 张壁纸",
                                  name, (unsigned long)kTDMaxPerInstall]];
             [fm removeItemAtPath:staging error:nil];
             continue;
@@ -312,8 +312,8 @@ BOOL tendies_install(NSArray<NSURL *> *files, NSUInteger *added, NSString **mess
         [fm removeItemAtPath:staging error:nil];
         if (!fileOK) {
             for (NSString *path in written) [fm removeItemAtPath:path error:nil];
-            [problems addObject:[NSString stringWithFormat:@"%@: copying into PosterBoard failed (%@)", name,
-                                 error.localizedDescription ?: @"see the log"]];
+            [problems addObject:[NSString stringWithFormat:@"%@：复制进 PosterBoard 失败（%@）", name,
+                                 error.localizedDescription ?: @"查看日志"]];
             continue;
         }
         for (NSString *path in written) {
@@ -328,11 +328,11 @@ BOOL tendies_install(NSArray<NSURL *> *files, NSUInteger *added, NSString **mess
     if (added) *added = total;
 
     if (total > 0 && !td_restart_posterboard()) {
-        [problems addObject:@"PosterBoard couldn't be restarted; restart the device to see the new wallpapers"];
+        [problems addObject:@"PosterBoard 无法重启；请重启设备以看到新壁纸"];
     }
     for (NSString *p in problems) log_user("[TENDIES] %s\n", p.UTF8String);
     if (total == 0) {
-        *message = problems.count ? [problems componentsJoinedByString:@"\n"] : @"Nothing was installed.";
+        *message = problems.count ? [problems componentsJoinedByString:@"\n"] : @"未安装任何内容。";
         return NO;
     }
     *message = problems.count ? [problems componentsJoinedByString:@"\n"] : nil;
@@ -345,7 +345,7 @@ BOOL tendies_remove(NSArray<NSString *> *paths, NSString **message)
     __autoreleasing NSString *dummy = nil;
     if (!message) message = &dummy;
     if (!darksword_prepare_var_rw()) {
-        *message = @"No access to /private/var (the sandbox could not be lifted).";
+        *message = @"无法访问 /private/var（沙盒未能解除）。";
         return NO;
     }
     NSString *container = td_posterboard_container();
@@ -384,6 +384,6 @@ BOOL tendies_remove(NSArray<NSString *> *paths, NSString **message)
     if (removed > 0) (void)td_restart_posterboard();
     log_user("[%s] Tendies: removed %lu wallpaper%s%s\n", failed ? "WARN" : "OK", (unsigned long)removed,
              removed == 1 ? "" : "s", failed ? ", some failed (see log)" : "");
-    if (failed) *message = @"Some wallpapers couldn't be removed. See the [TENDIES] lines in the log.";
+    if (failed) *message = @"部分壁纸无法移除。请查看日志中的 [TENDIES] 行。";
     return failed == 0;
 }

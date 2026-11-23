@@ -1315,7 +1315,7 @@ NSURL *settings_passcode_create_backup_archive(NSError **error, NSUInteger *skip
     if (paths.count == 0) {
         if (error) {
             *error = [NSError errorWithDomain:@"PasscodeTheme" code:20 userInfo:@{
-                NSLocalizedDescriptionKey: @"There are no original backups to pack yet."
+                NSLocalizedDescriptionKey: @"还没有可打包的原件备份。"
             }];
         }
         return nil;
@@ -1324,7 +1324,7 @@ NSURL *settings_passcode_create_backup_archive(NSError **error, NSUInteger *skip
     if (paths.count > 0xFFFFu) {
         if (error) {
             *error = [NSError errorWithDomain:@"PasscodeTheme" code:22 userInfo:@{
-                NSLocalizedDescriptionKey: @"There are more originals than a single .zip can describe."
+                NSLocalizedDescriptionKey: @"原件数量超出单个 .zip 能描述的范围。"
             }];
         }
         return nil;
@@ -1337,7 +1337,7 @@ NSURL *settings_passcode_create_backup_archive(NSError **error, NSUInteger *skip
     if (archive.length == 0 || entries == 0) {
         if (error) {
             *error = [NSError errorWithDomain:@"PasscodeTheme" code:21 userInfo:@{
-                NSLocalizedDescriptionKey: @"The backup files could not be read."
+                NSLocalizedDescriptionKey: @"备份文件读取失败。"
             }];
         }
         return nil;
@@ -1518,13 +1518,13 @@ bool settings_passcode_apply_digits(NSDictionary<NSString *, NSData *> *digits)
     settings_passcode_invalidate_caches();
 
     if (digits.count == 0) {
-        pt_set_summary(@"No digits to apply.");
+        pt_set_summary(@"没有可应用的数字。");
         log_user("[PASSCODE] Failed: no digits to apply.\n");
         return false;
     }
 
     if (!kexploit_krw_ready()) {
-        pt_set_summary(@"Kernel primitives are not active.");
+        pt_set_summary(@"内核原语未激活。");
         log_user("[PASSCODE] Failed: kernel primitives are not active. Run the chain first.\n");
         return false;
     }
@@ -1534,7 +1534,7 @@ bool settings_passcode_apply_digits(NSDictionary<NSString *, NSData *> *digits)
     // with a misleading "no keypad cache found" instead of saying the sandbox
     // could not be opened.
     if (!pt_prepare_sandbox()) {
-        pt_set_summary(@"Could not unlock /private/var read/write access.");
+        pt_set_summary(@"无法解锁 /private/var 读写权限。");
         log_user("[PASSCODE] Failed: /private/var read/write access is still denied.\n");
         return false;
     }
@@ -1542,14 +1542,14 @@ bool settings_passcode_apply_digits(NSDictionary<NSString *, NSData *> *digits)
     settings_passcode_invalidate_caches();
     pt_repair_typeless_telephony_dirs();
     if (!pt_retry_pending_dir_modes()) {
-        pt_set_summary(@"A previously widened keypad folder could not be restored; no new style was written.");
+        pt_set_summary(@"先前拓宽的键盘目录无法还原；未写入新样式。");
         log_user("[PASSCODE] Failed: a previously widened keypad folder could not be restored.\n");
         return false;
     }
 
     NSString *basePath = settings_passcode_telephony_base_path();
     if (basePath.length == 0) {
-        pt_set_summary(@"No TelephonyUI keypad cache was found on this device.");
+        pt_set_summary(@"此设备上未找到 TelephonyUI 键盘缓存。");
         log_user("[PASSCODE] Failed: no TelephonyUI keypad cache was found.\n");
         return false;
     }
@@ -1557,7 +1557,7 @@ bool settings_passcode_apply_digits(NSDictionary<NSString *, NSData *> *digits)
     NSDictionary<NSString *, NSArray<NSString *> *> *targets =
         settings_passcode_targets_by_digit(basePath);
     if (targets.count == 0) {
-        pt_set_summary(@"No keypad digit files were found in the cache.");
+        pt_set_summary(@"缓存中未找到键盘数字文件。");
         log_user("[PASSCODE] Failed: no keypad digit files matched in %s.\n",
                  basePath.UTF8String);
         return false;
@@ -1594,7 +1594,7 @@ bool settings_passcode_apply_digits(NSDictionary<NSString *, NSData *> *digits)
         NSData *data = digits[digit];
         if (![data isKindOfClass:NSData.class] || data.length == 0) {
             failed++;
-            [details addObject:[NSString stringWithFormat:@"digit %@ has no art", digit]];
+            [details addObject:[NSString stringWithFormat:@"数字 %@ 没有图案", digit]];
             log_user("[PASSCODE] Digit %s has no art to write.\n", digit.UTF8String);
             continue;
         }
@@ -1602,7 +1602,7 @@ bool settings_passcode_apply_digits(NSDictionary<NSString *, NSData *> *digits)
         NSArray<NSString *> *paths = targets[digit];
         if (paths.count == 0) {
             failed++;
-            [details addObject:[NSString stringWithFormat:@"no keypad file for digit %@", digit]];
+            [details addObject:[NSString stringWithFormat:@"数字 %@ 没有键盘文件", digit]];
             log_user("[PASSCODE] No keypad file matched digit %s.\n", digit.UTF8String);
             continue;
         }
@@ -1628,44 +1628,44 @@ bool settings_passcode_apply_digits(NSDictionary<NSString *, NSData *> *digits)
         if (snapshots) {
             NSUInteger stuck = pt_rollback_snapshots(snapshots, lockedDirs);
             rollbackNote = stuck == 0
-                ? @" The keypad was put back to its previous art."
-                : [NSString stringWithFormat:@" %lu file(s) could not be put back (use Restore to retry).",
+                ? @" 键盘已放回先前的图案。"
+                : [NSString stringWithFormat:@" %lu 个文件未能放回（可用“还原”重试）。",
                                              (unsigned long)stuck];
         } else {
-            rollbackNote = @" The keypad may be partially themed.";
+            rollbackNote = @" 键盘可能只套用了一部分样式。";
         }
     }
 
     bool modesRestored = pt_restore_directory_modes(lockedDirs);
-    if (!modesRestored) [details addObject:@"keypad folder mode not restored"];
+    if (!modesRestored) [details addObject:@"键盘目录模式未还原"];
 
     // The keypad cache just changed: nothing cached about it is valid anymore.
     settings_passcode_invalidate_caches();
 
     NSString *backupNote = g_pt_backups_written > 0
-        ? [NSString stringWithFormat:@", %lu original(s) saved", (unsigned long)g_pt_backups_written]
+        ? [NSString stringWithFormat:@"，已保存 %lu 个原件", (unsigned long)g_pt_backups_written]
         : @"";
 
     if (failed == 0 && modesRestored) {
         // Main clause first, detail second — same shape as the other actions'
         // logs ("[OK] Location Simulator applied.", "[NANO] Wrote pairing gates: …").
-        NSString *detail = [NSString stringWithFormat:@"%lu file(s) in %.1fs%@.",
+        NSString *detail = [NSString stringWithFormat:@"%lu 个文件，用时 %.1f 秒%@。",
                             (unsigned long)applied,
                             CFAbsoluteTimeGetCurrent() - startedAt,
                             backupNote];
-        pt_set_summary([NSString stringWithFormat:@"Passcode style applied. %@", detail]);
+        pt_set_summary([NSString stringWithFormat:@"密码盘样式已应用。%@", detail]);
         log_user("[OK] Passcode style applied. %s\n", detail.UTF8String);
         return applied > 0;
     }
 
     NSString *detail = [NSString stringWithFormat:
-        @"%lu file(s) written, %lu failed in %.1fs%@.%@ Failures: %@.",
+        @"写入 %lu 个文件、失败 %lu 个，用时 %.1f 秒%@。%@失败：%@。",
         (unsigned long)applied, (unsigned long)failed,
         CFAbsoluteTimeGetCurrent() - startedAt,
         backupNote,
         rollbackNote,
         [details componentsJoinedByString:@", "]];
-    pt_set_summary([NSString stringWithFormat:@"Passcode style did not apply cleanly. %@", detail]);
+    pt_set_summary([NSString stringWithFormat:@"密码盘样式未能干净地应用。%@", detail]);
     log_user("[WARN] Passcode style did not apply cleanly. %s\n", detail.UTF8String);
     // A partial apply counts as a failure: this flag drives the completion
     // banner, and a banner reading "Complete" above a summary that lists failed
@@ -1683,7 +1683,7 @@ bool settings_passcode_restore_originals(NSString *basePath)
     settings_passcode_invalidate_caches();
 
     if (!kexploit_krw_ready()) {
-        pt_set_summary(@"Kernel primitives are not active.");
+        pt_set_summary(@"内核原语未激活。");
         log_user("[PASSCODE] Failed: kernel primitives are not active. Run the chain first.\n");
         return false;
     }
@@ -1693,14 +1693,14 @@ bool settings_passcode_restore_originals(NSString *basePath)
     // Callers may pass a path they already resolved; an empty argument resolves
     // here, so this function is correct on its own.
     if (!pt_prepare_sandbox()) {
-        pt_set_summary(@"Could not unlock /private/var read/write access.");
+        pt_set_summary(@"无法解锁 /private/var 读写权限。");
         log_user("[PASSCODE] Failed: /private/var read/write access is still denied.\n");
         return false;
     }
     settings_passcode_invalidate_caches();
     pt_repair_typeless_telephony_dirs();
     if (!pt_retry_pending_dir_modes()) {
-        pt_set_summary(@"A previously widened keypad folder could not be restored; originals were not written.");
+        pt_set_summary(@"先前拓宽的键盘目录无法还原；未写入原件。");
         log_user("[PASSCODE] Failed: a previously widened keypad folder could not be restored.\n");
         return false;
     }
@@ -1709,7 +1709,7 @@ bool settings_passcode_restore_originals(NSString *basePath)
         basePath = settings_passcode_telephony_base_path();
     }
     if (basePath.length == 0) {
-        pt_set_summary(@"No TelephonyUI keypad cache was found on this device.");
+        pt_set_summary(@"此设备上未找到 TelephonyUI 键盘缓存。");
         log_user("[PASSCODE] Failed: no TelephonyUI keypad cache was found.\n");
         return false;
     }
@@ -1717,7 +1717,7 @@ bool settings_passcode_restore_originals(NSString *basePath)
     NSDictionary<NSString *, NSArray<NSString *> *> *targets =
         settings_passcode_targets_by_digit(basePath);
     if (targets.count == 0) {
-        pt_set_summary(@"No keypad digit files were found in the cache.");
+        pt_set_summary(@"缓存中未找到键盘数字文件。");
         log_user("[PASSCODE] Failed: no keypad digit files matched in %s.\n",
                  basePath.UTF8String);
         return false;
@@ -1740,7 +1740,7 @@ bool settings_passcode_restore_originals(NSString *basePath)
             NSData *original = pt_backup_data(path);
             if (original.length == 0) {
                 failed++;
-                [details addObject:[NSString stringWithFormat:@"%@ backup unreadable", file]];
+                [details addObject:[NSString stringWithFormat:@"%@ 备份不可读", file]];
                 log_user("[PASSCODE] Backup for %s is missing or unreadable.\n",
                          file.UTF8String);
                 continue;
@@ -1767,32 +1767,32 @@ bool settings_passcode_restore_originals(NSString *basePath)
     }
 
     bool modesRestored = pt_restore_directory_modes(lockedDirs);
-    if (!modesRestored) [details addObject:@"keypad folder mode not restored"];
+    if (!modesRestored) [details addObject:@"键盘目录模式未还原"];
 
     // The keypad cache just changed: nothing cached about it is valid anymore.
     settings_passcode_invalidate_caches();
 
     if (restored == 0 && failed == 0 && modesRestored) {
-        pt_set_summary(@"No original digit backups were found to restore.");
+        pt_set_summary(@"未找到可还原的原始数字备份。");
         log_user("[WARN] No original digit backups were found to restore.\n");
         return false;
     }
 
     if (failed == 0 && modesRestored) {
-        NSString *detail = [NSString stringWithFormat:@"%lu file(s) in %.1fs.",
+        NSString *detail = [NSString stringWithFormat:@"%lu 个文件，用时 %.1f 秒。",
                             (unsigned long)restored,
                             CFAbsoluteTimeGetCurrent() - startedAt];
-        pt_set_summary([NSString stringWithFormat:@"Original digits restored. %@", detail]);
+        pt_set_summary([NSString stringWithFormat:@"原始数字已还原。%@", detail]);
         log_user("[OK] Original digits restored. %s\n", detail.UTF8String);
         return true;
     }
 
     NSString *detail = [NSString stringWithFormat:
-        @"%lu file(s) restored, %lu failed in %.1fs: %@. Original backups are retained.",
+        @"还原 %lu 个文件、失败 %lu 个，用时 %.1f 秒：%@。原件备份已保留。",
         (unsigned long)restored, (unsigned long)failed,
         CFAbsoluteTimeGetCurrent() - startedAt,
         [details componentsJoinedByString:@", "]];
-    pt_set_summary([NSString stringWithFormat:@"Originals did not restore cleanly. %@", detail]);
+    pt_set_summary([NSString stringWithFormat:@"原件未能干净地还原。%@", detail]);
     log_user("[WARN] Originals did not restore cleanly. %s\n", detail.UTF8String);
     // Same rule as apply: a partial restore is reported as a failure, with the
     // per-file detail carried in the summary.
@@ -1819,7 +1819,7 @@ static NSString *pt_style_dir(void)
 static NSString *pt_style_name(void)
 {
     NSString *name = [NSUserDefaults.standardUserDefaults stringForKey:kPTStyleNameKey];
-    return name.length > 0 ? name : @"Imported Style";
+    return name.length > 0 ? name : @"已导入的样式";
 }
 
 static void pt_set_style_name(NSString *name)
@@ -1871,9 +1871,9 @@ NSDictionary *settings_passcode_selected_theme(void)
 NSString *settings_passcode_selected_theme_display_name(void)
 {
     NSDictionary *theme = settings_passcode_selected_theme();
-    if (!theme) return @"None selected";
+    if (!theme) return @"未选择";
     NSString *name = theme[@"name"];
-    return name.length > 0 ? name : @"Imported Style";
+    return name.length > 0 ? name : @"已导入的样式";
 }
 
 void settings_passcode_clear_selected_theme(void)
@@ -1901,7 +1901,7 @@ NSDictionary *settings_passcode_ensure_selected_theme(NSError **error)
     if (dir.length == 0) {
         if (error) {
             *error = [NSError errorWithDomain:@"PasscodeTheme" code:6 userInfo:@{
-                NSLocalizedDescriptionKey: @"Cyanide's style folder is unavailable."
+                NSLocalizedDescriptionKey: @"Cyanide 的样式目录不可用。"
             }];
         }
         return nil;
@@ -1915,7 +1915,7 @@ NSDictionary *settings_passcode_ensure_selected_theme(NSError **error)
         return nil;
     }
 
-    if (pt_style_name().length == 0) pt_set_style_name(@"My Style");
+    if (pt_style_name().length == 0) pt_set_style_name(@"我的样式");
     settings_passcode_invalidate_caches();
     log_user("[PASSCODE] Created a style folder to hold picked digit art.\n");
     return pt_style_dictionary();
@@ -2136,7 +2136,7 @@ BOOL settings_passcode_theme_set_digit_image(NSDictionary *theme,
     if (!pt_is_digit_key(digit) || pngData.length == 0) {
         if (error) {
             *error = [NSError errorWithDomain:@"PasscodeTheme" code:1 userInfo:@{
-                NSLocalizedDescriptionKey: @"Choose a digit image before saving."
+                NSLocalizedDescriptionKey: @"保存前请先选择数字图片。"
             }];
         }
         return NO;
@@ -2145,7 +2145,7 @@ BOOL settings_passcode_theme_set_digit_image(NSDictionary *theme,
     if (pngData.length > kPTMaxDigitBytes || !SBLImageDataPassesPixelPreflight(pngData)) {
         if (error) {
             *error = [NSError errorWithDomain:@"PasscodeTheme" code:6 userInfo:@{
-                NSLocalizedDescriptionKey: @"The digit image is too large. Use an image of at most 8 MB and 4096 × 4096 pixels."
+                NSLocalizedDescriptionKey: @"数字图片过大。请使用不超过 8 MB、4096 × 4096 像素的图片。"
             }];
         }
         return NO;
@@ -2157,7 +2157,7 @@ BOOL settings_passcode_theme_set_digit_image(NSDictionary *theme,
     if (dir.length == 0) {
         if (error) {
             *error = [NSError errorWithDomain:@"PasscodeTheme" code:2 userInfo:@{
-                NSLocalizedDescriptionKey: @"The selected style folder is missing."
+                NSLocalizedDescriptionKey: @"所选样式目录缺失。"
             }];
         }
         return NO;
@@ -2182,7 +2182,7 @@ BOOL settings_passcode_import_folder_named(NSURL *url,
     if (url.path.length == 0) {
         if (error) {
             *error = [NSError errorWithDomain:@"PasscodeTheme" code:3 userInfo:@{
-                NSLocalizedDescriptionKey: @"The selected folder could not be read."
+                NSLocalizedDescriptionKey: @"所选目录读取失败。"
             }];
         }
         return NO;
@@ -2232,7 +2232,7 @@ BOOL settings_passcode_import_folder_named(NSURL *url,
         if (candidates.count >= SBLMaxImportFileCount) {
             if (error) {
                 *error = [NSError errorWithDomain:@"PasscodeTheme" code:7 userInfo:@{
-                    NSLocalizedDescriptionKey: @"The selected folder holds too many images to import. The previous style is unchanged."
+                    NSLocalizedDescriptionKey: @"所选目录图片过多，无法导入。原样式保持不变。"
                 }];
             }
             return NO;
@@ -2268,7 +2268,7 @@ BOOL settings_passcode_import_folder_named(NSURL *url,
         if (bytesRead + srcSize > SBLMaxImportTotalBytes) {
             if (error) {
                 *error = [NSError errorWithDomain:@"PasscodeTheme" code:7 userInfo:@{
-                    NSLocalizedDescriptionKey: @"The selected folder's images are too large to import. The previous style is unchanged."
+                    NSLocalizedDescriptionKey: @"所选目录的图片过大，无法导入。原样式保持不变。"
                 }];
             }
             return NO;
@@ -2294,7 +2294,7 @@ BOOL settings_passcode_import_folder_named(NSURL *url,
     if (matched.count == 0) {
         if (error) {
             *error = [NSError errorWithDomain:@"PasscodeTheme" code:4 userInfo:@{
-                NSLocalizedDescriptionKey: @"No keypad digit images were found in the selected folder. Name each image after its digit (0-9) or keep the style's original keypad filenames."
+                NSLocalizedDescriptionKey: @"所选目录中没有键盘数字图片。请把每张图片按数字命名（0-9），或保留样式原有的键盘文件名。"
             }];
         }
         return NO;
@@ -2310,7 +2310,7 @@ BOOL settings_passcode_import_folder_named(NSURL *url,
             for (NSString *done in staged) [fm removeItemAtPath:done error:nil];
             if (error) {
                 *error = [NSError errorWithDomain:@"PasscodeTheme" code:5 userInfo:@{
-                    NSLocalizedDescriptionKey: @"The style could not be written; the previous style is unchanged."
+                    NSLocalizedDescriptionKey: @"样式写入失败，原样式保持不变。"
                 }];
             }
             return NO;
@@ -2346,7 +2346,7 @@ BOOL settings_passcode_import_folder_named(NSURL *url,
         for (NSString *rest in staged) [fm removeItemAtPath:rest error:nil];
         if (error) {
             *error = [NSError errorWithDomain:@"PasscodeTheme" code:5 userInfo:@{
-                NSLocalizedDescriptionKey: @"The style could not be written; the previous style is unchanged."
+                NSLocalizedDescriptionKey: @"样式写入失败，原样式保持不变。"
             }];
         }
         return NO;
@@ -2381,8 +2381,8 @@ BOOL settings_passcode_import_folder_named(NSURL *url,
                  restoreOK ? "succeeded" : "FAILED");
         if (error) {
             NSString *msg = restoreOK
-                ? @"The style could not be written; the previous style is unchanged."
-                : @"The style could not be written, and the previous style could not be fully restored. Import a style again or reset the passcode theme.";
+                ? @"样式写入失败，原样式保持不变。"
+                : @"样式写入失败，且原样式未能完全还原。请重新导入样式或重置密码盘主题。";
             *error = [NSError errorWithDomain:@"PasscodeTheme" code:5 userInfo:@{
                 NSLocalizedDescriptionKey: msg
             }];
@@ -2401,7 +2401,7 @@ BOOL settings_passcode_import_folder_named(NSURL *url,
         [fm removeItemAtPath:[styleDir stringByAppendingPathComponent:entry] error:nil];
     }
 
-    NSString *name = displayName.length > 0 ? displayName : @"Imported Style";
+    NSString *name = displayName.length > 0 ? displayName : @"已导入的样式";
     pt_set_style_name(name);
     settings_passcode_invalidate_caches();
     log_user("[PASSCODE] Imported style \"%s\" with %lu digit(s).\n",

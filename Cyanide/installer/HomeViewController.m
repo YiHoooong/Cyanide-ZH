@@ -134,11 +134,11 @@ static const CGFloat kMargin = 20.0;
     [d setBool:YES forKey:kAskedKey];
 
     UIAlertController *ac = [UIAlertController
-        alertControllerWithTitle:@"Faster tweak apply"
+        alertControllerWithTitle:@"更快的插件应用"
                          message:@"Cyanide now defaults to the Fastest apply speed, which cuts the wait between remote calls. Switch to Fastest? You can change this any time in Settings → Launch Options."
                   preferredStyle:UIAlertControllerStyleAlert];
     __weak typeof(self) weakSelf = self;
-    [ac addAction:[UIAlertAction actionWithTitle:@"Not Now"
+    [ac addAction:[UIAlertAction actionWithTitle:@"暂不"
                                            style:UIAlertActionStyleCancel
                                          handler:^(UIAlertAction *_) {
         [weakSelf offerPeV3AfterDismissal];
@@ -179,10 +179,10 @@ static const CGFloat kMargin = 20.0;
     [d setBool:YES forKey:kAskedKey];
 
     UIAlertController *ac = [UIAlertController
-        alertControllerWithTitle:@"Try the pe_v3 exploit path?"
+        alertControllerWithTitle:@"要试用 pe_v3 漏洞利用路径吗？"
                          message:@"This version adds pe_v3, a newer exploit method for A18 / M4 devices. It probably causes fewer reboots: it stops early instead of reading memory that is likely to panic the device, and retries cleanly instead.\n\nSwitch to pe_v3? You can change this any time in Settings → Launch Options → A18 exploit path."
                   preferredStyle:UIAlertControllerStyleAlert];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Keep Current" style:UIAlertActionStyleCancel handler:nil]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"保持当前" style:UIAlertActionStyleCancel handler:nil]];
     [ac addAction:[UIAlertAction actionWithTitle:@"Switch to pe_v3"
                                            style:UIAlertActionStyleDefault
                                          handler:^(UIAlertAction *_) {
@@ -232,7 +232,7 @@ static const CGFloat kMargin = 20.0;
 
     UILabel *tagline = [[UILabel alloc] init];
     tagline.translatesAutoresizingMaskIntoConstraints = NO;
-    tagline.text = @"SpringBoard tweaks for stock iOS";
+    tagline.text = @"原生 iOS 的 SpringBoard 插件";
     tagline.font = [UIFont systemFontOfSize:17.0 weight:UIFontWeightBold];
     tagline.textColor = UIColor.whiteColor;
     tagline.textAlignment = NSTextAlignmentCenter;
@@ -385,7 +385,7 @@ static const CGFloat kMargin = 20.0;
 
     UILabel *header = [self sectionHeader:version.length
         ? [NSString stringWithFormat:@"What's New in %@", [version hasPrefix:@"v"] ? [version substringFromIndex:1] : version]
-        : @"What's New"];
+        : @"新变化"];
     [s addArrangedSubview:header];
     [s setCustomSpacing:18.0 afterView:header];
 
@@ -401,7 +401,7 @@ static const CGFloat kMargin = 20.0;
     // The whole card opens Settings → What's New; this row says so.
     UIButton *all = [UIButton buttonWithType:UIButtonTypeSystem];
     UIButtonConfiguration *cfg = [UIButtonConfiguration plainButtonConfiguration];
-    cfg.title = shown ? @"See All Changes" : @"See This Version's Changes";
+    cfg.title = shown ? @"查看全部变化" : @"查看此版本的变化";
     cfg.image = [UIImage systemImageNamed:@"chevron.right"
                         withConfiguration:[UIImageSymbolConfiguration configurationWithPointSize:12.0 weight:UIImageSymbolWeightSemibold]];
     cfg.imagePlacement = NSDirectionalRectEdgeTrailing;
@@ -431,36 +431,36 @@ static const CGFloat kMargin = 20.0;
     // get it by themselves on A18/M4. Runs the exploit alone, with the log.
     // A local strong reference: the property is weak, so assigning the new
     // view to it directly released it before it was added (no row at all).
-    UIView *kernelRow = [self bigActionButton:@"Run Exploit"
-                                          sub:@"Kernel access for the tools"
+    UIView *kernelRow = [self bigActionButton:@"运行漏洞利用"
+                                          sub:@"为工具提供内核访问"
                                          icon:@"lock.open.fill"
                                         color:UIColor.systemPurpleColor
                                           sel:@selector(runExploit)];
     kernelRow.hidden = settings_kernel_access_available();
     [s addArrangedSubview:kernelRow];
     self.kernelAccessRow = kernelRow;
-    [s addArrangedSubview:[self bigActionButton:@"Process Viewer"
-                                          sub:@"See and quit running processes"
+    [s addArrangedSubview:[self bigActionButton:@"进程查看器"
+                                          sub:@"查看并结束运行中的进程"
                                          icon:@"list.bullet.rectangle.fill"
                                         color:UIColor.systemIndigoColor
                                           sel:@selector(openProcessViewer)]];
-    [s addArrangedSubview:[self bigActionButton:@"File Browser"
-                                          sub:@"Browse files and edit plists"
+    [s addArrangedSubview:[self bigActionButton:@"文件浏览器"
+                                          sub:@"浏览文件并编辑 plist"
                                          icon:@"folder.fill"
                                         color:UIColor.systemBlueColor
                                           sel:@selector(openFileBrowser)]];
-    [s addArrangedSubview:[self bigActionButton:@"Daemon Manager"
-                                          sub:@"Turn system services off and on"
+    [s addArrangedSubview:[self bigActionButton:@"守护进程管理器"
+                                          sub:@"开关系统服务"
                                          icon:@"gearshape.2.fill"
                                         color:UIColor.systemTealColor
                                           sel:@selector(openDaemons)]];
-    [s addArrangedSubview:[self bigActionButton:@"Cache Cleaner"
-                                          sub:@"Free space from app caches"
+    [s addArrangedSubview:[self bigActionButton:@"缓存清理器"
+                                          sub:@"从应用缓存释放空间"
                                          icon:@"trash.fill"
                                         color:UIColor.systemCyanColor
                                           sel:@selector(openCleaner)]];
-    [s addArrangedSubview:[self bigActionButton:@"System Info"
-                                          sub:@"Battery, uptime, kernel access, storage"
+    [s addArrangedSubview:[self bigActionButton:@"系统信息"
+                                          sub:@"电池、运行时长、内核访问、存储"
                                          icon:@"info.circle.fill"
                                         color:UIColor.systemGreenColor
                                           sel:@selector(openSystemInfo)]];
@@ -474,16 +474,16 @@ static const CGFloat kMargin = 20.0;
     UIView *card = [self card];
     UIStackView *s = [self vstackInCard:card spacing:12.0];
 
-    [s addArrangedSubview:[self sectionHeader:@"Get Started"]];
+    [s addArrangedSubview:[self sectionHeader:@"开始使用"]];
 
-    [s addArrangedSubview:[self bigActionButton:@"Open QuickLoader"
-                                          sub:@"Run a local .js tweak file"
+    [s addArrangedSubview:[self bigActionButton:@"打开 QuickLoader"
+                                          sub:@"运行本地 .js 插件文件"
                                          icon:@"bolt.fill"
                                         color:UIColor.systemOrangeColor
                                           sel:@selector(openQuickLoader)]];
     if (repotweaks_sources_enabled()) {
         [s addArrangedSubview:[self bigActionButton:@"Add a Source"
-                                              sub:@"Browse and install JS tweaks from repos"
+                                              sub:@"从仓库浏览并安装 JS 插件"
                                              icon:@"plus.circle.fill"
                                             color:UIColor.systemGreenColor
                                               sel:@selector(openSourcesTab)]];
@@ -809,8 +809,8 @@ static const CGFloat kMargin = 20.0;
         typeof(self) me = weakSelf;
         [me updateKernelAccessRow];
         if (!ready || !me || me.presentedViewController) return;
-        UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"Kernel Access Ready"
-            message:@"Process Viewer, File Browser, Daemon Manager, Cache Cleaner and System Info can use it now."
+        UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"内核访问就绪"
+            message:@"进程查看器、文件浏览器、守护进程管理器、缓存清理器和系统信息现在都可以使用它了。"
             preferredStyle:UIAlertControllerStyleAlert];
         [ac addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
         [me presentViewController:ac animated:YES completion:nil];

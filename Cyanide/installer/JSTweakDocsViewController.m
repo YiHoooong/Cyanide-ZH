@@ -59,9 +59,9 @@
 
 - (void)buildTweakDocsInStack:(UIStackView *)stack
 {
-    [stack addArrangedSubview:[self introCard:@"Build JavaScript Tweaks"
-                                        body:@"Write .js scripts that run inside SpringBoard through Cyanide's RemoteCall bridge. Publish them as a source repo or load them locally with QuickLoader."
-                                      credit:@"JavaScript engine contributed by @MinePlayer16"]];
+    [stack addArrangedSubview:[self introCard:@"构建 JavaScript 插件"
+                                        body:@"编写通过 Cyanide 的 RemoteCall 桥在 SpringBoard 内运行的 .js 脚本。发布为源仓库，或用 QuickLoader 本地加载。"
+                                      credit:@"JavaScript 引擎由 @MinePlayer16 贡献"]];
 
     [stack addArrangedSubview:[self docCard:@"Writing a Tweak"
         body:@"A tweak is a plain .js file that runs inside JavaScriptCore. 64-bit pointers are passed as hex strings (e.g. \"0x105f2a000\"). Wrap your code in an IIFE:\n\n"
@@ -75,7 +75,7 @@
               "})();\n\n"
               "Use log() to print to Cyanide's Log tab. Use r_msg2_main() instead of r_msg2() for anything that touches UIKit views."]];
 
-    [stack addArrangedSubview:[self docCard:@"Parameter Declaration"
+    [stack addArrangedSubview:[self docCard:@"参数声明"
         body:@"Add @param comments at the top of your script. Cyanide parses them and generates native UI controls in Settings.\n\n"
               "Syntax:\n"
               "// @param: type | varName | Label | default | range\n\n"
@@ -110,7 +110,7 @@
               "r_responds(target, selector) → bool\n"
               "  Check if an object responds to a selector."]];
 
-    [stack addArrangedSubview:[self docCard:@"Reading Parameters (QuickLoader)"
+    [stack addArrangedSubview:[self docCard:@"读取参数（QuickLoader）"
         body:@"QuickLoader scripts can read their @param values at runtime:\n\n"
               "r_pref_num(\"blurRadius\")   → float\n"
               "r_pref_bool(\"enableBlur\")  → boolean\n"
@@ -125,7 +125,7 @@
               "clearTimeout(id)\n\n"
               "All active timers are automatically cancelled when the tweak is disabled or Cyanide cleans up."]];
 
-    [stack addArrangedSubview:[self docCard:@"Color Allocation Example"
+    [stack addArrangedSubview:[self docCard:@"颜色分配示例"
         body:@"64-bit IPC can't pass CGFloat arrays directly. Allocate colors through CIColor:\n\n"
               "var hex = \"#00FFCC\".replace('#','');\n"
               "var r = parseInt(hex.substring(0,2),16)/255;\n"
@@ -153,11 +153,11 @@
 
 - (void)buildRepoDocsInStack:(UIStackView *)stack
 {
-    [stack addArrangedSubview:[self introCard:@"Set Up a Tweak Repository"
+    [stack addArrangedSubview:[self introCard:@"搭建插件仓库"
                                         body:@"Host your JavaScript tweaks as an HTTPS JSON feed that Cyanide users can add in the Sources tab. No server-side code needed — a GitHub Pages repo or any static file host works."
                                       credit:nil]];
 
-    [stack addArrangedSubview:[self docCard:@"Repository JSON Format"
+    [stack addArrangedSubview:[self docCard:@"仓库 JSON 格式"
         body:@"Create a JSON file with this structure:\n\n"
               "{\n"
               "  \"repoName\": \"My Repo\",\n"
@@ -176,7 +176,7 @@
               "}\n\n"
               "Host it at any HTTPS URL. Users paste this URL into Cyanide's Sources tab."]];
 
-    [stack addArrangedSubview:[self docCard:@"Required Fields"
+    [stack addArrangedSubview:[self docCard:@"必填字段"
         body:@"repoName\n"
               "  Display name shown in the Sources list.\n\n"
               "author\n"
@@ -195,7 +195,7 @@
               "  HTTPS URL to the .js file. Cyanide\n"
               "  downloads and caches it on refresh."]];
 
-    [stack addArrangedSubview:[self docCard:@"Optional Fields"
+    [stack addArrangedSubview:[self docCard:@"可选字段"
         body:@"tweaks[].symbol\n"
               "  SF Symbol name for the tweak icon\n"
               "  (e.g. \"paintpalette.fill\", \"wind\").\n"
@@ -208,7 +208,7 @@
               "Custom icon images are not yet supported\n"
               "but are planned for a future update."]];
 
-    [stack addArrangedSubview:[self docCard:@"Hosting with GitHub Pages"
+    [stack addArrangedSubview:[self docCard:@"用 GitHub Pages 托管"
         body:@"1. Create a public GitHub repo\n"
               "2. Add your .js tweak files\n"
               "3. Add a JSON file (e.g. tweaks.json)\n"
@@ -220,14 +220,14 @@
               "5. Share the JSON URL with users:\n"
               "   https://yourname.github.io/repo/tweaks.json"]];
 
-    [stack addArrangedSubview:[self docCard:@"Updating Tweaks"
+    [stack addArrangedSubview:[self docCard:@"更新插件"
         body:@"To push an update:\n\n"
               "1. Update the .js file at the same URL\n"
               "2. Bump the version string in the JSON\n"
               "3. Commit and push\n\n"
               "Cyanide checks for updates every few hours. When the repo version is newer than the installed version, the Sources tab shows an update badge. Users tap the tweak to reinstall the latest version."]];
 
-    [stack addArrangedSubview:[self docCard:@"Multiple Tweaks"
+    [stack addArrangedSubview:[self docCard:@"多个插件"
         body:@"Add more entries to the tweaks array:\n\n"
               "\"tweaks\": [\n"
               "  { \"id\": \"me.hidedock\", … },\n"
@@ -255,7 +255,7 @@
 {
     [UIPasteboard generalPasteboard].string = [self markdownString];
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil
-                                                                   message:@"Copied to clipboard"
+                                                                   message:@"已拷贝到剪贴板"
                                                             preferredStyle:UIAlertControllerStyleAlert];
     [self presentViewController:alert animated:YES completion:nil];
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{

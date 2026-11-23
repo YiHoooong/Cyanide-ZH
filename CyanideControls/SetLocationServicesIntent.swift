@@ -47,7 +47,7 @@ enum CyanideLocationRequest {
     @MainActor
     static func run(_ action: String) async throws {
         try await runURL("cyanide://location-services/\(action)",
-                         timeoutMessage: "Location Services is taking longer than expected.")
+                         timeoutMessage: "定位服务耗时比预期长。")
     }
 
     /// Any cyanide:// request the app's SceneDelegate handles (Location
@@ -60,7 +60,7 @@ enum CyanideLocationRequest {
         let selector = NSSelectorFromString("cy_runLocationURL:completion:")
         guard let handler = NSClassFromString("SceneDelegate") as? NSObject.Type,
               handler.responds(to: selector) else {
-            throw CyanideLocationRequestFailure(message: "Cyanide couldn't take the request.")
+            throw CyanideLocationRequestFailure(message: "Cyanide 无法接受该请求。")
         }
         // One-shot: the first of completion, timeout or cancellation wins;
         // the others are ignored. Cancellation only detaches the caller —
@@ -90,11 +90,11 @@ enum CyanideLocationRequest {
 
 @available(iOS 18.0, *)
 struct SetLocationServicesIntent: SetValueIntent {
-    static let title: LocalizedStringResource = "Set Location Services"
-    static let description = IntentDescription("Opens Cyanide to turn Location Services on or off.")
+    static let title: LocalizedStringResource = "设置定位服务"
+    static let description = IntentDescription("打开 Cyanide 以开关定位服务。")
     static let openAppWhenRun: Bool = true
 
-    @Parameter(title: "Location Services On")
+    @Parameter(title: "打开定位服务")
     var value: Bool
 
     init() {}

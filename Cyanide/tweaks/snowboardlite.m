@@ -304,7 +304,7 @@ BOOL settings_sbl_import_folder_theme_named(NSURL *url,
         if (error) {
             *error = [NSError errorWithDomain:@"SnowBoardLite"
                                          code:1
-                                     userInfo:@{NSLocalizedDescriptionKey: @"No IconBundles directory was found in this folder."}];
+                                     userInfo:@{NSLocalizedDescriptionKey: @"此目录中没有 IconBundles 目录。"}];
         }
         return NO;
     }
@@ -315,7 +315,7 @@ BOOL settings_sbl_import_folder_theme_named(NSURL *url,
     if (error && *error) return NO;
 
     NSString *baseName = displayName.length ? displayName :
-        (url.lastPathComponent.length ? url.lastPathComponent : @"Imported Theme");
+        (url.lastPathComponent.length ? url.lastPathComponent : @"已导入的主题");
     NSString *themeID = [NSString stringWithFormat:@"sbl-%llu",
                          (unsigned long long)(NSDate.date.timeIntervalSince1970 * 1000.0)];
     NSString *themeDir = [root stringByAppendingPathComponent:themeID];
@@ -346,7 +346,7 @@ BOOL settings_sbl_import_folder_theme_named(NSURL *url,
             // count or aggregate cap the whole import fails; a single oversized
             // or non-regular file is skipped like an unmapped one.
             if (discovered > SBLMaxImportFileCount) {
-                budgetFailure = @"This theme has too many icons to import.";
+                budgetFailure = @"此主题图标过多，无法导入。";
                 break;
             }
             // Same per-icon cap the themer apply path uses (THEMER_MAX_ICON_BYTES),
@@ -357,7 +357,7 @@ BOOL settings_sbl_import_folder_theme_named(NSURL *url,
             if (!SBLImageFilePassesPreflight(fileURL.path, THEMER_MAX_ICON_BYTES, &fileBytes)) {
                 skipped++;
                 if (skippedSamples.count < 8) {
-                    [skippedSamples addObject:[NSString stringWithFormat:@"%@ (over %u bytes or unreadable)",
+                    [skippedSamples addObject:[NSString stringWithFormat:@"%@（超过 %u 字节或不可读）",
                                                fileURL.lastPathComponent ?: @"unknown.png",
                                                (unsigned)THEMER_MAX_ICON_BYTES]];
                 }
@@ -382,14 +382,14 @@ BOOL settings_sbl_import_folder_theme_named(NSURL *url,
                     duplicates++;
                     skipped++;
                     if (skippedSamples.count < 8) {
-                        [skippedSamples addObject:[NSString stringWithFormat:@"%@ (duplicate %@)",
+                        [skippedSamples addObject:[NSString stringWithFormat:@"%@（重复的 %@）",
                                                    fileURL.lastPathComponent ?: @"unknown.png",
                                                    bundleID]];
                     }
                     continue;
                 }
                 if (importedBytes + fileBytes > SBLMaxImportTotalBytes) {
-                    budgetFailure = @"This theme's icons are larger than 256 MB in total.";
+                    budgetFailure = @"此主题的图标总量超过 256 MB。";
                     break;
                 }
                 NSString *dstName = [bundleID stringByAppendingPathExtension:@"png"];
@@ -403,7 +403,7 @@ BOOL settings_sbl_import_folder_theme_named(NSURL *url,
                 } else {
                     skipped++;
                     if (skippedSamples.count < 8) {
-                        [skippedSamples addObject:[NSString stringWithFormat:@"%@ (copy failed)",
+                        [skippedSamples addObject:[NSString stringWithFormat:@"%@（拷贝失败）",
                                                    fileURL.lastPathComponent ?: @"unknown.png"]];
                     }
                 }
@@ -428,7 +428,7 @@ BOOL settings_sbl_import_folder_theme_named(NSURL *url,
         if (error) {
             *error = [NSError errorWithDomain:@"SnowBoardLite"
                                          code:2
-                                     userInfo:@{NSLocalizedDescriptionKey: @"IconBundles was found, but no bundle-ID PNG icons could be imported."}];
+                                     userInfo:@{NSLocalizedDescriptionKey: @"找到了 IconBundles，但没有可导入的 bundle ID PNG 图标。"}];
         }
         return NO;
     }
@@ -461,7 +461,7 @@ BOOL settings_sbl_import_folder_theme_named(NSURL *url,
         if (error) {
             *error = [NSError errorWithDomain:@"SnowBoardLite"
                                          code:4
-                                     userInfo:@{NSLocalizedDescriptionKey: @"The theme list could not be saved, so the theme was not imported."}];
+                                     userInfo:@{NSLocalizedDescriptionKey: @"主题列表保存失败，主题未导入。"}];
         }
         return NO;
     }

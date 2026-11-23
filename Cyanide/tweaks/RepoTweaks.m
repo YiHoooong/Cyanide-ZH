@@ -27,7 +27,7 @@ static NSString * const kRepoTweaksDefaultReposSeedVersionKey = @"RepoTweaksDefa
 static NSString * const kRepoTweaksDefaultReposSeedVersion = @"6";
 // What a source refresh reports when a newer refresh of the same source took
 // over. Not a failure of the source: the newer refresh reports the real result.
-static NSString * const kRepoTweaksSupersededMessage = @"A newer refresh of this source replaced this one.";
+static NSString * const kRepoTweaksSupersededMessage = @"此源已被更新的刷新取代。";
 // The default source URL the user deleted, if they did (see the seeding).
 static NSString * const kRepoTweaksDefaultRepoRemovedURLKey = @"RepoTweaksDefaultRepoRemovedURL";
 
@@ -453,7 +453,7 @@ didReceiveResponse:(NSURLResponse *)response
     self.handler = nil;
     if (!handler) return;
     if (self.tooLarge) {
-        NSString *desc = [NSString stringWithFormat:@"Response is larger than the %lu KB limit.",
+        NSString *desc = [NSString stringWithFormat:@"响应超过 %lu KB 上限。",
                           (unsigned long)(self.maxBytes / 1024)];
         handler(nil, self.response,
                 [NSError errorWithDomain:@"RepoTweaks" code:413
@@ -482,7 +482,7 @@ static void repotweaks_bounded_fetch(NSURLRequest *request, NSTimeInterval timeo
 
 static NSDictionary *repotweaks_sanitized_tweak(id raw, NSString **errorMessage) {
     if (![raw isKindOfClass:NSDictionary.class]) {
-        if (errorMessage) *errorMessage = @"Repo tweak entry is not an object.";
+        if (errorMessage) *errorMessage = @"仓库插件条目不是对象。";
         return nil;
     }
     NSDictionary *dict = (NSDictionary *)raw;
@@ -490,11 +490,11 @@ static NSDictionary *repotweaks_sanitized_tweak(id raw, NSString **errorMessage)
     NSString *name = repotweaks_string_or_empty(dict[@"name"]);
     NSString *scriptURL = repotweaks_string_or_empty(dict[@"scriptURL"]);
     if (tweakID.length == 0 || name.length == 0 || scriptURL.length == 0) {
-        if (errorMessage) *errorMessage = @"Repo tweak is missing id, name, or scriptURL.";
+        if (errorMessage) *errorMessage = @"仓库插件缺少 id、name 或 scriptURL。";
         return nil;
     }
     if (!repotweaks_is_https_url(scriptURL)) {
-        if (errorMessage) *errorMessage = @"Repo tweak scriptURL must be HTTPS.";
+        if (errorMessage) *errorMessage = @"仓库插件的 scriptURL 必须是 HTTPS。";
         return nil;
     }
 
@@ -522,13 +522,13 @@ static NSDictionary *repotweaks_sanitized_tweak(id raw, NSString **errorMessage)
 
 static NSDictionary *repotweaks_sanitized_repo(id raw, NSString **errorMessage) {
     if (![raw isKindOfClass:NSDictionary.class]) {
-        if (errorMessage) *errorMessage = @"Repository JSON root must be an object.";
+        if (errorMessage) *errorMessage = @"仓库 JSON 根必须是对象。";
         return nil;
     }
     NSDictionary *dict = (NSDictionary *)raw;
     id rawTweaks = dict[@"tweaks"];
     if (![rawTweaks isKindOfClass:NSArray.class]) {
-        if (errorMessage) *errorMessage = @"Repository JSON must include a tweaks array.";
+        if (errorMessage) *errorMessage = @"仓库 JSON 必须包含 tweaks 数组。";
         return nil;
     }
 
@@ -559,7 +559,7 @@ static NSDictionary *repotweaks_sanitized_repo(id raw, NSString **errorMessage) 
                  (unsigned long)kRepoTweaksMaxTweaksPerRepo, (unsigned long)dropped, dropped == 1 ? "y" : "ies");
     }
     if (tweaks.count == 0) {
-        if (errorMessage) *errorMessage = @"Repository has no valid HTTPS-backed tweaks.";
+        if (errorMessage) *errorMessage = @"仓库没有基于 HTTPS 的有效插件。";
         return nil;
     }
 
@@ -660,7 +660,7 @@ void repotweaks_seed_default_repos(void) {
 
     if ([urls containsObject:kRepoTweaksDefaultRepoURL] && ![caches[kRepoTweaksDefaultRepoURL] isKindOfClass:NSDictionary.class]) {
         caches[kRepoTweaksDefaultRepoURL] = @{
-            @"repoName": @"MinePlayer16's Repository",
+            @"repoName": @"MinePlayer16 的仓库",
             @"author": @"MinePlayer16/Iggy05",
             @"tweaks": @[],
         };
@@ -704,7 +704,7 @@ void repotweaks_seed_default_repos(void) {
             inFlight = NO;
             pthread_mutex_unlock(&lock);
             if (!success) {
-                log_user("[RepoTweaks] Default source refresh failed: %s\n", (message ?: @"Download failed.").UTF8String);
+                log_user("[RepoTweaks] Default source refresh failed: %s\n", (message ?: @"下载失败。").UTF8String);
             }
         });
     }
@@ -1192,39 +1192,39 @@ static void repotweaks_fetch_repo(NSString *repoURL, BOOL addIfMissing,
     // Every source fetch goes through here: nothing connects while Repo
     // sources is off.
     if (!repotweaks_sources_enabled()) {
-        finish(NO, @"Repo sources are turned off.");
+        finish(NO, @"仓库源已关闭。");
         return;
     }
     if (!repotweaks_is_https_url(repoURL)) {
-        finish(NO, @"Repository URL must be HTTPS.");
+        finish(NO, @"仓库 URL 必须是 HTTPS。");
         return;
     }
 
     NSMutableURLRequest *request = repotweaks_uncached_request(repoURL, 20.0);
     if (!request) {
-        finish(NO, @"Repository URL is invalid.");
+        finish(NO, @"仓库 URL 无效。");
         return;
     }
 
     repotweaks_bounded_fetch(request, 20.0, kRepoTweaksMaxRepoBytes, ^(NSData *data, NSURLResponse *response, NSError *error) {
         if (error || !data) {
-            finish(NO, error.localizedDescription ?: @"Download failed.");
+            finish(NO, error.localizedDescription ?: @"下载失败。");
             return;
         }
         if ([response isKindOfClass:NSHTTPURLResponse.class]) {
             NSHTTPURLResponse *http = (NSHTTPURLResponse *)response;
             NSInteger status = http.statusCode;
             if (status < 200 || status >= 300) {
-                finish(NO, [NSString stringWithFormat:@"Repository returned HTTP %ld.", (long)status]);
+                finish(NO, [NSString stringWithFormat:@"仓库返回 HTTP %ld。", (long)status]);
                 return;
             }
             if (!repotweaks_content_type_matches(http, @[@"application/json", @"text/json", @"text/plain"])) {
-                finish(NO, @"Repository did not return JSON.");
+                finish(NO, @"仓库未返回 JSON。");
                 return;
             }
         }
         if (data.length == 0 || data.length > kRepoTweaksMaxRepoBytes) {
-            finish(NO, @"Repository JSON is empty or too large.");
+            finish(NO, @"仓库 JSON 为空或过大。");
             return;
         }
 
@@ -1233,7 +1233,7 @@ static void repotweaks_fetch_repo(NSString *repoURL, BOOL addIfMissing,
         NSString *validationError = nil;
         NSDictionary *sanitized = repotweaks_sanitized_repo(json, &validationError);
         if (!sanitized) {
-            finish(NO, validationError ?: jsonErr.localizedDescription ?: @"Invalid JSON.");
+            finish(NO, validationError ?: jsonErr.localizedDescription ?: @"JSON 无效。");
             return;
         }
 
@@ -1249,7 +1249,7 @@ static void repotweaks_fetch_repo(NSString *repoURL, BOOL addIfMissing,
             NSMutableArray *urls = [[repotweaks_saved_urls(d) mutableCopy] ?: [NSMutableArray array] mutableCopy];
             if (![urls containsObject:repoURL]) {
                 if (!addIfMissing) {
-                    finish(NO, @"Source was removed during refresh.");
+                    finish(NO, @"刷新期间源被移除。");
                     return;
                 }
                 [urls addObject:repoURL];
@@ -1318,7 +1318,7 @@ static void repotweaks_fetch_repo(NSString *repoURL, BOOL addIfMissing,
             }
 
             if (keepPrevious) {
-                finish(NO, @"The source now lists no tweaks; kept the previous list.");
+                finish(NO, @"此源现在没有插件；已保留之前的列表。");
                 return;
             }
             caches[repoURL] = sanitized;
@@ -1365,7 +1365,7 @@ static void repotweaks_fetch_repo(NSString *repoURL, BOOL addIfMissing,
                     finish(NO, kRepoTweaksSupersededMessage);
                     return;
                 }
-                finish(scriptsOK, scriptsOK ? @"Refreshed." : @"Refreshed, but one or more scripts failed to download.");
+                finish(scriptsOK, scriptsOK ? @"Refreshed." : @"已刷新，但一个或多个脚本下载失败。");
             });
         });
     });
@@ -1484,7 +1484,7 @@ BOOL repotweaks_download_script_sync(NSString *repoURL,
     if (message) *message = nil;
     if (![tweakId isKindOfClass:NSString.class] || tweakId.length == 0 ||
         !repotweaks_is_https_url(scriptURL)) {
-        if (message) *message = @"Invalid script URL.";
+        if (message) *message = @"脚本 URL 无效。";
         return NO;
     }
 
@@ -1498,10 +1498,10 @@ BOOL repotweaks_download_script_sync(NSString *repoURL,
     NSTimeInterval boundedTimeout = timeout > 0 ? timeout : 25.0;
     long wait = dispatch_semaphore_wait(sema, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(boundedTimeout * NSEC_PER_SEC)));
     if (wait != 0) {
-        if (message) *message = @"Timed out downloading latest script.";
+        if (message) *message = @"下载最新脚本超时。";
         return NO;
     }
-    if (!ok && message) *message = @"Failed to download latest script.";
+    if (!ok && message) *message = @"下载最新脚本失败。";
     return ok;
 }
 
@@ -1607,10 +1607,10 @@ NSString *repotweaks_compatibility_note(NSDictionary *tweak)
     NSString *minIOS = repotweaks_string_or_empty(tweak[@"minIOS"]);
     NSString *maxIOS = repotweaks_string_or_empty(tweak[@"maxIOS"]);
     if (minIOS.length > 0 && maxIOS.length > 0) {
-        return [NSString stringWithFormat:@"Tested on iOS %@–%@", minIOS, maxIOS];
+        return [NSString stringWithFormat:@"在 iOS %@–%@ 上测试", minIOS, maxIOS];
     }
-    if (maxIOS.length > 0) return [NSString stringWithFormat:@"Tested on iOS %@ and below", maxIOS];
-    if (minIOS.length > 0) return [NSString stringWithFormat:@"Requires iOS %@ or newer", minIOS];
+    if (maxIOS.length > 0) return [NSString stringWithFormat:@"在 iOS %@ 及更低版本上测试", maxIOS];
+    if (minIOS.length > 0) return [NSString stringWithFormat:@"需要 iOS %@ 或更高版本", minIOS];
     return nil;
 }
 
@@ -1630,9 +1630,9 @@ NSString *repotweaks_unsupported_reason(NSDictionary *tweak)
     if (message.length > 0) return message;
     NSString *note = repotweaks_compatibility_note(tweak);
     if (note.length > 0) return note;
-    if (tooNew && maxIOS.length > 0) return [NSString stringWithFormat:@"Only tested on iOS %@ and below.", maxIOS];
-    if (tooOld && minIOS.length > 0) return [NSString stringWithFormat:@"Requires iOS %@ or newer.", minIOS];
-    return @"This repo tweak is not supported on this iOS version.";
+    if (tooNew && maxIOS.length > 0) return [NSString stringWithFormat:@"仅在 iOS %@ 及更低版本上测试。", maxIOS];
+    if (tooOld && minIOS.length > 0) return [NSString stringWithFormat:@"需要 iOS %@ 或更高版本。", minIOS];
+    return @"此仓库插件在此 iOS 版本上不受支持。";
 }
 
 NSTimeInterval repotweaks_seen_timestamp(NSString *repoURL, NSString *tweakId) {
@@ -1687,13 +1687,13 @@ void repotweaks_refresh_all_sources(void (^completion)(RepoTweaksRefreshStatus s
         });
     };
     if (!repotweaks_sources_enabled()) {
-        finish(RepoTweaksRefreshStatusFailure, @[@"Repo sources are turned off."]);
+        finish(RepoTweaksRefreshStatusFailure, @[@"仓库源已关闭。"]);
         return;
     }
     repotweaks_seed_default_repos();
     NSArray<NSString *> *urls = repotweaks_saved_urls([NSUserDefaults standardUserDefaults]);
     if (urls.count == 0) {
-        finish(RepoTweaksRefreshStatusFailure, @[@"No repository sources are configured."]);
+        finish(RepoTweaksRefreshStatusFailure, @[@"未配置任何仓库源。"]);
         return;
     }
 
@@ -1727,7 +1727,7 @@ void repotweaks_refresh_all_sources(void (^completion)(RepoTweaksRefreshStatus s
             ? RepoTweaksRefreshStatusSuccess
             : (successes > 0 ? RepoTweaksRefreshStatusPartial : RepoTweaksRefreshStatusFailure);
         if (failures > 0 && messages.count == 0) {
-            [messages addObject:@"All configured sources failed to refresh."];
+            [messages addObject:@"所有已配置的源刷新失败。"];
         }
         finish(status, [messages copy]);
     });

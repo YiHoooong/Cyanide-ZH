@@ -469,17 +469,17 @@ static void lara_card_clear_cache(NSString *dir)
 BOOL lara_wallet_card_set_image(NSDictionary *card, NSData *png, NSString **errorOut)
 {
     NSString *image = card[@"imagePath"], *dir = card[@"dir"];
-    if (!image.length || png.length == 0) { if (errorOut) *errorOut = @"Nothing to write."; return NO; }
+    if (!image.length || png.length == 0) { if (errorOut) *errorOut = @"没有可写入的内容。"; return NO; }
     NSString *backup = [image stringByAppendingString:@".backup"];
     NSFileManager *fm = NSFileManager.defaultManager;
     NSError *error = nil;
     // Back up the original once; never overwrite an existing backup.
     if (![fm fileExistsAtPath:backup] && ![fm copyItemAtPath:image toPath:backup error:&error]) {
-        if (errorOut) *errorOut = [NSString stringWithFormat:@"Backup failed: %@", error.localizedDescription];
+        if (errorOut) *errorOut = [NSString stringWithFormat:@"备份失败：%@", error.localizedDescription];
         return NO;
     }
     if (![png writeToFile:image options:NSDataWritingAtomic error:&error]) {
-        if (errorOut) *errorOut = error.localizedDescription ?: @"The image could not be written.";
+        if (errorOut) *errorOut = error.localizedDescription ?: @"图片写入失败。";
         return NO;
     }
     lara_card_clear_cache(dir);
@@ -492,10 +492,10 @@ BOOL lara_wallet_card_restore(NSDictionary *card, NSString **errorOut)
     NSString *image = card[@"imagePath"], *dir = card[@"dir"];
     NSString *backup = [image stringByAppendingString:@".backup"];
     NSData *original = [NSData dataWithContentsOfFile:backup];
-    if (original.length == 0) { if (errorOut) *errorOut = @"No backup of the original image."; return NO; }
+    if (original.length == 0) { if (errorOut) *errorOut = @"没有原图备份。"; return NO; }
     NSError *error = nil;
     if (![original writeToFile:image options:NSDataWritingAtomic error:&error]) {
-        if (errorOut) *errorOut = error.localizedDescription ?: @"The original could not be restored.";
+        if (errorOut) *errorOut = error.localizedDescription ?: @"原件还原失败。";
         return NO;
     }
     [NSFileManager.defaultManager removeItemAtPath:backup error:nil];

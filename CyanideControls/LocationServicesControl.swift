@@ -32,13 +32,13 @@ struct LocationServicesControl: ControlWidget {
 
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: Self.kind, provider: Provider()) { isOn in
-            ControlWidgetToggle("Location Services", isOn: isOn, action: SetLocationServicesIntent()) { on in
+            ControlWidgetToggle("定位服务", isOn: isOn, action: SetLocationServicesIntent()) { on in
                 Label(on ? "On" : "Off", systemImage: on ? "location.fill" : "location.slash.fill")
             }
             .tint(.blue)
         }
-        .displayName("Location Services")
-        .description("Turns Location Services on or off through Cyanide.")
+        .displayName("定位服务")
+        .description("通过 Cyanide 开关定位服务。")
     }
 
     struct Provider: ControlValueProvider {

@@ -40,10 +40,10 @@ static BOOL PackageIsSnowBoardLite(Package *package)
 static NSString *PackageMissingThemeReason(Package *package)
 {
     if (PackageIsThemer(package) && !settings_themer_has_selected_theme()) {
-        return @"Icon Theme Engine needs a selected theme before it can be activated. Open its settings and choose a theme first.";
+        return @"图标主题引擎需要先选择主题才能激活。请先打开其设置并选择主题。";
     }
     if (PackageIsSnowBoardLite(package) && !settings_snowboardlite_has_selected_theme()) {
-        return @"SnowBoard Lite needs a selected theme before it can be activated. Open SnowBoard Lite settings and choose iOS 6 Theme or import a SnowBoard/IconBundles theme first.";
+        return @"SnowBoard Lite 需要先选择主题才能激活。请先打开 SnowBoard Lite 设置，选择 iOS 6 主题或导入 SnowBoard/IconBundles 主题。";
     }
     return nil;
 }
@@ -278,7 +278,7 @@ static BOOL PackageShouldAutoQueueForApply(Package *package)
             if (reason) {
                 *reason = package.installDisabledReason.length
                     ? package.installDisabledReason
-                    : @"This package is not available on this iOS version.";
+                    : @"此软件包在此 iOS 版本上不可用。";
             }
             return NO;
         }
@@ -292,14 +292,14 @@ static BOOL PackageShouldAutoQueueForApply(Package *package)
     BOOL isHideHomeBar = package.kind == PackageInstallKindHideHomeBar;
     if (isHideHomeBar && [self pendingCountExcludingPackage:package] > 0) {
         if (reason) {
-            *reason = @"Hide Home Bar changes the system home-indicator asset and needs a respring right after. Clear the current queue, run Hide Home Bar by itself, respring, then queue your other tweaks.";
+            *reason = @"隐藏 Home 条会修改系统主屏幕指示条素材，之后需要立即重加载。请清空当前队列、单独运行“隐藏 Home 条”、重加载，然后再把其他插件排队。";
         }
         return NO;
     }
 
     if (!isHideHomeBar && [self hasQueuedHideHomeBarIntentExcludingPackage:package]) {
         if (reason) {
-            *reason = @"Hide Home Bar is already waiting in the queue and must run by itself. Apply or remove Hide Home Bar first, then queue other tweaks after the respring.";
+            *reason = @"隐藏 Home 条已在队列中等待且必须单独运行。请先应用或移除“隐藏 Home 条”，重加载后再将其他插件排队。";
         }
         return NO;
     }
@@ -309,7 +309,7 @@ static BOOL PackageShouldAutoQueueForApply(Package *package)
         package.repoTweakUsesQuickLoader &&
         [self hasQueuedRepoTweakInstallExcludingPackage:package]) {
         if (reason) {
-            *reason = @"QuickLoader installs one repo tweak at a time. Apply or remove the currently queued repo tweak first.";
+            *reason = @"QuickLoader 一次只安装一个仓库插件。请先应用或移除当前排队的仓库插件。";
         }
         return NO;
     }
@@ -508,7 +508,7 @@ static BOOL PackageShouldAutoQueueForApply(Package *package)
             // this, a package whose apply failed (e.g. a repo tweak whose
             // script download failed) would show as installed successfully
             // whenever the rest of the run succeeds.
-            settings_note_run_preflight_failure(@"Some packages failed to apply — check the log above.");
+            settings_note_run_preflight_failure(@"部分软件包应用失败——请查看上方日志。");
         }
         // Keep the queue locked until the run we start reports completion.
         // Clearing it here let a second commit begin while this run was still
@@ -543,7 +543,7 @@ static BOOL PackageShouldAutoQueueForApply(Package *package)
     if (!allApplied) {
         info[kSettingsActionsDidCompleteSuccessKey] = @NO;
         info[kSettingsActionsDidCompleteMessageKey] =
-            @"Some packages failed to apply — check the log above.";
+            @"部分软件包应用失败——请查看上方日志。";
     } else if (preflight.length > 0) {
         info[kSettingsActionsDidCompleteSuccessKey] = @YES;
         info[kSettingsActionsDidCompletePartialKey] = @YES;

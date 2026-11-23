@@ -185,7 +185,7 @@ static void ds_keepalive_install_observers_once(void)
             // Siri dismissed, alarm dismissed). Reactivate even if the OS didn't
             // set AVAudioSessionInterruptionOptionShouldResume — silent keepalive
             // doesn't get that hint reliably on iOS 18.
-            ds_keepalive_revive(@"interruption ended");
+            ds_keepalive_revive(@"中断结束");
             settings_background_live_arm("Keep Alive resumed");
         }
     }];
@@ -195,7 +195,7 @@ static void ds_keepalive_install_observers_once(void)
                      queue:nil
                 usingBlock:^(NSNotification *note) {
         (void)note;
-        ds_keepalive_rebuild(@"mediaservices reset");
+        ds_keepalive_rebuild(@"mediaservices 重置");
     }];
 
     [nc addObserverForName:AVAudioSessionRouteChangeNotification
@@ -211,7 +211,7 @@ static void ds_keepalive_install_observers_once(void)
             // iOS's default is to pause on OldDeviceUnavailable (headphones
             // unplugged, AirPods out of ear). We don't want that for the
             // silent assertion.
-            ds_keepalive_revive(@"route change");
+            ds_keepalive_revive(@"线路变更");
         }
     }];
 
@@ -220,7 +220,7 @@ static void ds_keepalive_install_observers_once(void)
                      queue:[NSOperationQueue mainQueue]
                 usingBlock:^(NSNotification *note) {
         (void)note;
-        ds_keepalive_revive(@"app became active");
+        ds_keepalive_revive(@"应用进入活动状态");
     }];
 }
 

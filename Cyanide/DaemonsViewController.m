@@ -71,7 +71,7 @@ static void daemons_invalidate_snapshot(NSDictionary * __strong *disabled,
     *disabled = nil;
     *running = nil;
     [staged removeAllObjects];
-    *status = message.length ? message : @"The list of disabled daemons could not be read. Check the log.";
+    *status = message.length ? message : @"已禁用守护进程列表读取失败，请查看日志。";
 }
 
 @class DaemonGroupViewController;
@@ -132,7 +132,7 @@ static void daemons_invalidate_snapshot(NSDictionary * __strong *disabled,
     if (self.group.caution) s = [s stringByAppendingFormat:@"\n\n⚠️ %@", self.group.caution];
     return [s stringByAppendingString:@"\n\nSwitched on means the daemon may run. Changes are written when you tap Save and take effect after a restart. "
                                       @"Most daemons only run while something needs them, so “not running” doesn't mean disabled. "
-                                      @"Pull down on the list to refresh."];
+                                      @"下拉列表即可刷新。"];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -180,7 +180,7 @@ static void daemons_invalidate_snapshot(NSDictionary * __strong *disabled,
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    self.title = @"Daemon Manager";
+    self.title = @"守护进程管理器";
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeAlways;
     self.staged = [NSMutableDictionary dictionary];
     self.navigationItem.rightBarButtonItem =
@@ -188,7 +188,7 @@ static void daemons_invalidate_snapshot(NSDictionary * __strong *disabled,
                                                       target:self action:@selector(confirmSave)];
     self.refreshControl = [UIRefreshControl new];
     [self.refreshControl addTarget:self action:@selector(pullToRefresh) forControlEvents:UIControlEventValueChanged];
-    self.status = @"Reading disabled daemons…";
+    self.status = @"正在读取已禁用的守护进程…";
     [self loadAllowingFullExploit:NO];
 }
 
@@ -233,19 +233,19 @@ static void daemons_invalidate_snapshot(NSDictionary * __strong *disabled,
     if (self.warningAccepted) return;
     if (self.presentedViewController) return;
     UIAlertController *ac = [UIAlertController
-        alertControllerWithTitle:@"Disabling Daemons Can Brick Your Device"
-                         message:@"Turning off system daemons changes how iOS starts, at every boot. The services listed here are "
+        alertControllerWithTitle:@"禁用守护进程可能导致设备变砖"
+                         message:@"关闭系统守护进程会在每次开机时改变 iOS 的启动方式。此处列出的服务被"
                                  @"widely disabled without problems, but that isn't guaranteed for every iOS version and device.\n\n"
-                                 @"If iOS can't finish starting, Cyanide can't undo the change. Only a restore fixes it: it "
-                                 @"erases the device unless you have a backup, and it installs the newest iOS, which Cyanide "
+                                 @"广泛禁用且无问题，但不能保证适用于每个 iOS 版本和设备。如果 iOS 无法完成启动，Cyanide 无法撤销更改。只能通过恢复解决："
+                                 @"没有备份时设备会被抹掉，且会装上最新的 iOS，而 Cyanide"
                                  @"most likely doesn't support.\n\n"
-                                 @"Back up first, change one thing at a time and restart to check it before the next."
+                                 @"先备份，每次只改一项，重启确认正常后再改下一项。"
                   preferredStyle:UIAlertControllerStyleAlert];
     __weak typeof(self) weakSelf = self;
-    [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *a) {
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction *a) {
         [weakSelf.navigationController popViewControllerAnimated:YES];
     }]];
-    [ac addAction:[UIAlertAction actionWithTitle:@"I Understand" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *a) {
+    [ac addAction:[UIAlertAction actionWithTitle:@"我已了解" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *a) {
         [NSUserDefaults.standardUserDefaults setInteger:kDaemonsWarningVersion forKey:kDaemonsWarningAcceptedKey];
         [weakSelf refreshUI];
     }]];
@@ -288,7 +288,7 @@ static void daemons_invalidate_snapshot(NSDictionary * __strong *disabled,
     *warning = NO;
     NSString *status = [self runningStatusForLabel:label warning:warning];
     NSNumber *v = self.staged[label];
-    if (v != nil) status = [status stringByAppendingString:v.boolValue ? @" · disabled when you save" : @" · enabled when you save"];
+    if (v != nil) status = [status stringByAppendingString:v.boolValue ? @" · 存储时禁用" : @" · 存储时启用"];
     return status;
 }
 
@@ -296,29 +296,29 @@ static void daemons_invalidate_snapshot(NSDictionary * __strong *disabled,
 {
     NSDictionary *info = self.running[label];
     NSString *name = info[@"name"] ?: daemon_catalog_executable_guess(label);
-    if (!self.running) return [name stringByAppendingString:@" · status unknown"];
+    if (!self.running) return [name stringByAppendingString:@" · 状态未知"];
     if (daemon_catalog_is_legacy_label(label))
-        return [name stringByAppendingString:@" · legacy disabled entry; job presence not checked"];
-    if ([info[@"missing"] boolValue]) return [name stringByAppendingString:@" · not a job on this iOS version"];
-    if ([info[@"unknown"] boolValue]) return [name stringByAppendingString:@" · status unknown"];
+        return [name stringByAppendingString:@" · 旧版禁用条目；未检测任务是否存在"];
+    if ([info[@"missing"] boolValue]) return [name stringByAppendingString:@" · 在此 iOS 版本上不是任务"];
+    if ([info[@"unknown"] boolValue]) return [name stringByAppendingString:@" · 状态未知"];
     NSNumber *pid = info[@"pid"];
     NSNumber *shared = info[@"shared"];
     BOOL off = [self isLabelDisabled:label];
     // One process for several jobs: which job runs it is unknown.
     if (shared != nil)
-        return pid != nil ? [NSString stringWithFormat:@"%@ · Running · PID %@ · shared by %@ jobs", name, pid, shared]
-                          : [NSString stringWithFormat:@"%@ · Not running · shared by %@ jobs", name, shared];
+        return pid != nil ? [NSString stringWithFormat:@"%@ · 运行中 · PID %@ · 被 %@ 个任务共用", name, pid, shared]
+                          : [NSString stringWithFormat:@"%@ · 未运行 · 被 %@ 个任务共用", name, shared];
     BOOL changed = [daemons_changed_this_boot() containsObject:label];
     if (pid != nil && off && changed)
-        return [NSString stringWithFormat:@"%@ · Running · PID %@ · stops after restart", name, pid];
+        return [NSString stringWithFormat:@"%@ · 运行中 · PID %@ · 重启后停止", name, pid];
     if (pid != nil && off) {
         *warning = YES;
-        return [NSString stringWithFormat:@"%@ · Running · PID %@ · still running although disabled", name, pid];
+        return [NSString stringWithFormat:@"%@ · 运行中 · PID %@ · 已禁用但仍在运行", name, pid];
     }
-    if (pid != nil) return [NSString stringWithFormat:@"%@ · Running · PID %@", name, pid];
-    if (off) return [name stringByAppendingString:@" · Not running"];
-    if (changed) return [name stringByAppendingString:@" · Not running · can start again after restart"];
-    return [name stringByAppendingString:@" · Not running (starts when needed)"];
+    if (pid != nil) return [NSString stringWithFormat:@"%@ · 运行中 · PID %@", name, pid];
+    if (off) return [name stringByAppendingString:@" · 未运行"];
+    if (changed) return [name stringByAppendingString:@" · 未运行 · 重启后可再次启动"];
+    return [name stringByAppendingString:@" · 未运行（按需启动）"];
 }
 
 - (void)refreshUI
@@ -406,13 +406,13 @@ static void daemons_invalidate_snapshot(NSDictionary * __strong *disabled,
         }
     }
     NSMutableArray *parts = [NSMutableArray array];
-    if (off) [parts addObject:[NSString stringWithFormat:@"%lu daemon%@ will be disabled", (unsigned long)off, off == 1 ? @"" : @"s"]];
-    if (on) [parts addObject:[NSString stringWithFormat:@"%lu will be enabled", (unsigned long)on]];
-    NSString *message = [[parts componentsJoinedByString:@", "] stringByAppendingString:@" after the next restart."];
+    if (off) [parts addObject:[NSString stringWithFormat:@"%lu 个守护进程%@将被禁用", (unsigned long)off, off == 1 ? @"" : @"s"]];
+    if (on) [parts addObject:[NSString stringWithFormat:@"%lu 个将被启用", (unsigned long)on]];
+    NSString *message = [[parts componentsJoinedByString:@", "] stringByAppendingString:@" 下次重启后生效。"];
     if (cautions.count) message = [message stringByAppendingFormat:@"\n\n⚠️ %@", [cautions componentsJoinedByString:@"\n\n⚠️ "]];
-    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"Save Changes?" message:message
+    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"要存储更改吗？" message:message
                                                          preferredStyle:UIAlertControllerStyleAlert];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     [ac addAction:[UIAlertAction actionWithTitle:@"Save" style:off ? UIAlertActionStyleDestructive : UIAlertActionStyleDefault
                                          handler:^(UIAlertAction *a) { [self saveAllowingFullExploit:NO]; }]];
     [self presentViewController:ac animated:YES completion:nil];
@@ -458,17 +458,17 @@ static void daemons_invalidate_snapshot(NSDictionary * __strong *disabled,
         // lost): say why nothing happened instead of failing silently.
         if (settings_tool_exploit_was_offered(self)) {
             if (!presenter.view.window || presenter.presentedViewController) return;
-            UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"Daemon Manager"
+            UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"守护进程管理器"
                 message:kSettingsNoKernelAccessHint preferredStyle:UIAlertControllerStyleAlert];
             [ac addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
             [presenter presentViewController:ac animated:YES completion:nil];
             return;
         }
-        settings_tool_needs_exploit(self, self.tableView, @"Daemon Manager", retry);
+        settings_tool_needs_exploit(self, self.tableView, @"守护进程管理器", retry);
         return;
     }
     if (!presenter.view.window || presenter.presentedViewController) return;
-    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"Daemon Manager" message:message ?: @"Something went wrong."
+    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"守护进程管理器" message:message ?: @"出了点问题。"
                                                          preferredStyle:UIAlertControllerStyleAlert];
     [ac addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
     [presenter presentViewController:ac animated:YES completion:nil];
@@ -532,21 +532,21 @@ static void daemons_invalidate_snapshot(NSDictionary * __strong *disabled,
     if (section == 1) return @"Advanced";
     if (self.status) return self.status;
     if (self.staged.count)
-        return [NSString stringWithFormat:@"%lu unsaved change%@ — tap Save to apply", (unsigned long)self.staged.count,
+        return [NSString stringWithFormat:@"%lu 个未存储的更改%@——点按“存储”以应用", (unsigned long)self.staged.count,
                 self.staged.count == 1 ? @"" : @"s"];
-    return daemons_restart_pending() ? @"Restart the device to apply your changes" : nil;
+    return daemons_restart_pending() ? @"重启设备以应用更改" : nil;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section
 {
     if (section == 0)
-        return @"Switched on means the service may run. Tap Save to write your changes to launchd's disabled.plist; "
-               @"they take effect after the next restart. If something you need stops working, switch it back on, "
-               @"save and restart.";
-    return @"Services other parts of iOS rely on. Disabling them is more likely to cause problems.\n\n"
+        return @"开关打开表示该服务可以运行。点按“存储”将更改写入 launchd 的 disabled.plist；"
+               @"下次重启后生效。如果需要的功能失效，请重新打开开关、"
+               @"存储并重启。";
+    return @"iOS 其他部分依赖的服务。禁用它们更可能引发问题。\n\n"
            @"⚠️ Disabling system daemons is at your own risk. If iOS can't finish starting, only a restore "
-           @"fixes it: it erases the device unless you have a backup and installs the newest iOS, which Cyanide "
-           @"most likely doesn't support. Change one thing at a time.";
+           @"没有备份时设备会被抹掉，且会装上最新的 iOS，而 Cyanide"
+           @"很可能不支持它。每次只改一项。";
 }
 
 - (UITableViewCell *)advancedSwitchCell
@@ -554,7 +554,7 @@ static void daemons_invalidate_snapshot(NSDictionary * __strong *disabled,
     UITableViewCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"advanced"];
     if (!cell) cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"advanced"];
     UIListContentConfiguration *c = cell.defaultContentConfiguration;
-    c.text = @"Show Advanced";
+    c.text = @"显示高级选项";
     cell.contentConfiguration = c;
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
     UISwitch *sw = [UISwitch new];
@@ -575,12 +575,12 @@ static void daemons_invalidate_snapshot(NSDictionary * __strong *disabled,
         return;
     }
     UIAlertController *ac = [UIAlertController
-        alertControllerWithTitle:@"Show Advanced Daemons?"
-                         message:@"These services are used by other parts of iOS. Disabling them is more likely to break "
-                                 @"things or, in the worst case, stop the device from starting. A restore would then "
-                                 @"install the newest iOS, which Cyanide most likely doesn't support."
+        alertControllerWithTitle:@"要显示高级守护进程吗？"
+                         message:@"这些服务被 iOS 的其他部分使用。禁用它们更可能造成故障，"
+                                 @"最坏情况下会导致设备无法启动。届时只能恢复并"
+                                 @"安装最新的 iOS，而 Cyanide 很可能不支持它。"
                   preferredStyle:UIAlertControllerStyleAlert];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *a) {
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction *a) {
         [self refreshUI];
     }]];
     [ac addAction:[UIAlertAction actionWithTitle:@"Show" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *a) {
@@ -616,20 +616,20 @@ static void daemons_invalidate_snapshot(NSDictionary * __strong *disabled,
     }
     NSMutableArray *facts = [NSMutableArray array];
     if (off > 0 && off < g.labels.count)
-        [facts addObject:[NSString stringWithFormat:@"%lu of %lu disabled", (unsigned long)off, (unsigned long)g.labels.count]];
+        [facts addObject:[NSString stringWithFormat:@"已禁用 %lu / %lu", (unsigned long)off, (unsigned long)g.labels.count]];
     BOOL hasLegacy = NO;
     for (NSString *label in g.labels) hasLegacy |= daemon_catalog_is_legacy_label(label);
     if (hasLegacy) {
-        [facts addObject:@"legacy disabled entries; job presence not checked"];
+        [facts addObject:@"旧版禁用条目；未检测任务是否存在"];
     } else {
         BOOL allMissing = self.running != nil;
         for (NSString *label in g.labels) allMissing &= [self isLabelMissing:label];
         if (allMissing)
-            [facts addObject:@"not a job on this iOS version"];
+            [facts addObject:@"在此 iOS 版本上不是任务"];
         else if (self.running && ![self.running[g.labels.firstObject][@"unknown"] boolValue])
-            [facts addObject:running ? [NSString stringWithFormat:@"%lu running", (unsigned long)running] : @"not running"];
+            [facts addObject:running ? [NSString stringWithFormat:@"%lu 个运行中", (unsigned long)running] : @"未运行"];
     }
-    if (anyWarning) [facts addObject:@"still running although disabled"];
+    if (anyWarning) [facts addObject:@"已禁用但仍在运行"];
     if (unsaved) [facts insertObject:@"unsaved" atIndex:0];
     [facts addObject:g.summary];
     c.secondaryText = [facts componentsJoinedByString:@" · "];

@@ -71,9 +71,9 @@ static int compare_versions(NSString *a, NSString *b)
 // nil for an HTTP 200; otherwise the failure text.
 static NSString *update_http_failure(NSURLResponse *response)
 {
-    if (![response isKindOfClass:NSHTTPURLResponse.class]) return @"Unexpected response from GitHub.";
+    if (![response isKindOfClass:NSHTTPURLResponse.class]) return @"GitHub 返回了意外的响应。";
     NSInteger status = ((NSHTTPURLResponse *)response).statusCode;
-    if (status != 200) return [NSString stringWithFormat:@"GitHub returned HTTP %ld.", (long)status];
+    if (status != 200) return [NSString stringWithFormat:@"GitHub 返回 HTTP %ld。", (long)status];
     return nil;
 }
 
@@ -225,7 +225,7 @@ static NSString *update_http_failure(NSURLResponse *response)
            self.currentVersion.UTF8String);
 
     UIAlertController *checking = [UIAlertController
-        alertControllerWithTitle:@"Checking for Updates…"
+        alertControllerWithTitle:@"正在检查更新…"
                          message:@"\n\n"
                   preferredStyle:UIAlertControllerStyleAlert];
     UIActivityIndicatorView *spin =
@@ -258,21 +258,21 @@ static NSString *update_http_failure(NSURLResponse *response)
         NSString *notes = nil;
 
         if (error || !data) {
-            failureReason = error ? error.localizedDescription : @"No response from GitHub.";
+            failureReason = error ? error.localizedDescription : @"GitHub 无响应。";
         } else if ((failureReason = update_http_failure(response))) {
             // Non-200 (rate limit, outage): don't parse an error body as a release.
         } else {
             NSError *jsonErr = nil;
             id obj = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonErr];
             if (jsonErr || ![obj isKindOfClass:NSDictionary.class]) {
-                failureReason = @"Could not parse the release feed.";
+                failureReason = @"无法解析版本发布流。";
             } else {
                 NSDictionary *release = obj;
                 id tagObj  = release[@"tag_name"];
                 id urlObj  = release[@"html_url"];
                 id bodyObj = release[@"body"];
                 if (![tagObj isKindOfClass:NSString.class] || ![urlObj isKindOfClass:NSString.class]) {
-                    failureReason = @"Release feed was missing fields.";
+                    failureReason = @"版本发布流缺少字段。";
                 } else {
                     latest  = self_ ? [self_ normalizeTag:tagObj] : tagObj;
                     htmlURL = urlObj;
@@ -287,9 +287,9 @@ static NSString *update_http_failure(NSURLResponse *response)
                 if (failureReason) {
                     printf("[UPDATE] manual check failed: %s\n", failureReason.UTF8String);
                     UIAlertController *ac = [UIAlertController
-                        alertControllerWithTitle:@"Check Failed"
+                        alertControllerWithTitle:@"检查失败"
                                          message:[NSString stringWithFormat:
-                                                  @"Couldn't reach GitHub.\n\n%@", failureReason]
+                                                  @"无法连接 GitHub。\n\n%@", failureReason]
                                   preferredStyle:UIAlertControllerStyleAlert];
                     [ac addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleCancel handler:nil]];
                     UIViewController *top2 = presenter;
@@ -302,9 +302,9 @@ static NSString *update_http_failure(NSURLResponse *response)
                     printf("[UPDATE] manual check: up to date (current=%s latest=%s)\n",
                            current.UTF8String, latest.UTF8String);
                     UIAlertController *ac = [UIAlertController
-                        alertControllerWithTitle:@"Up to Date"
+                        alertControllerWithTitle:@"已是最新版本"
                                          message:[NSString stringWithFormat:
-                                                  @"You're on the latest release.\n\nInstalled: %@\nLatest: %@",
+                                                  @"已是最新版本。\n\n已安装：%@\n最新：%@",
                                                   current, latest]
                                   preferredStyle:UIAlertControllerStyleAlert];
                     [ac addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleCancel handler:nil]];
@@ -350,7 +350,7 @@ static NSString *update_http_failure(NSURLResponse *response)
     while (top.presentedViewController) top = top.presentedViewController;
 
     NSMutableString *message = [NSMutableString string];
-    [message appendFormat:@"A new release of Cyanide is available.\n\nLatest: %@\nInstalled: %@",
+    [message appendFormat:@"Cyanide 有新版本。\n\n最新：%@\n已安装：%@",
                           latest, current];
 
     NSString *trimmed = [notes stringByTrimmingCharactersInSet:
@@ -371,16 +371,16 @@ static NSString *update_http_failure(NSURLResponse *response)
         if (body.length > kMaxNotesChars) {
             body = [[body substringToIndex:kMaxNotesChars - 1] stringByAppendingString:@"…"];
         }
-        [message appendFormat:@"\n\nWhat's new:\n%@", body];
+        [message appendFormat:@"\n\n新变化：\n%@", body];
     } else {
-        [message appendString:@"\n\nUpdates ship as sideloadable IPAs on GitHub Releases."];
+        [message appendString:@"\n\n更新以可自签的 IPA 形式发布在 GitHub Releases。"];
     }
 
-    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"Update Available"
+    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"有可用更新"
                                                                 message:message
                                                          preferredStyle:UIAlertControllerStyleAlert];
 
-    [ac addAction:[UIAlertAction actionWithTitle:@"View Release"
+    [ac addAction:[UIAlertAction actionWithTitle:@"查看新版本"
                                            style:UIAlertActionStyleDefault
                                          handler:^(UIAlertAction *_) {
         // Only follow the feed's link to an https github.com page; anything
@@ -395,14 +395,14 @@ static NSString *update_http_failure(NSURLResponse *response)
         [[UIApplication sharedApplication] openURL:u options:@{} completionHandler:nil];
     }]];
 
-    [ac addAction:[UIAlertAction actionWithTitle:@"Remind Me Later"
+    [ac addAction:[UIAlertAction actionWithTitle:@"稍后提醒"
                                            style:UIAlertActionStyleDefault
                                          handler:^(UIAlertAction *_) {
         NSDate *until = [[NSDate date] dateByAddingTimeInterval:kSnoozeDuration];
         [[NSUserDefaults standardUserDefaults] setObject:until forKey:kUpdateSnoozeUntilKey];
     }]];
 
-    [ac addAction:[UIAlertAction actionWithTitle:@"Skip This Version"
+    [ac addAction:[UIAlertAction actionWithTitle:@"跳过此版本"
                                            style:UIAlertActionStyleDestructive
                                          handler:^(UIAlertAction *_) {
         [[NSUserDefaults standardUserDefaults] setObject:latest forKey:kUpdateSkippedVersionKey];

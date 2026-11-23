@@ -429,7 +429,7 @@ static void sbmat_reload_home_backdrop(NSSet<NSString *> *names)
     if (r_is_objc_ptr(backdrop) && r_responds_main(backdrop, "_invalidateBackdropSnapshot"))
         r_msg2_main(backdrop, "_invalidateBackdropSnapshot", 0, 0, 0, 0);
     printf("[SBMAT] home screen backdrop: %s, material %s (%s)\n", r_is_objc_ptr(backdrop) ? "found" : "not found",
-           reloaded ? "reloaded" : "not reloaded", (recipe ?: @"none yet").UTF8String);
+           reloaded ? "reloaded" : "not reloaded", (recipe ?: @"暂无").UTF8String);
 }
 
 #pragma mark - Items and apply
@@ -512,12 +512,12 @@ bool sbmat_apply_in_session(NSDictionary<NSString *, NSDictionary *> *config, NS
     uint64_t cache = slot ? remote_read64(slot) : 0;
     if (!r_is_objc_ptr(cache) || !r_msg2(cache, "isKindOfClass:", r_class("NSDictionary"), 0, 0, 0)) {
         printf("[SBMAT] recipe cache: %s\n", slot ? "not a dictionary in SpringBoard" : "not found");
-        *why = @"CoreMaterial's recipe cache wasn't found. Check the log.";
+        *why = @"未找到 CoreMaterial 的配方缓存。请查看日志。";
         return false;
     }
     uint64_t bundleCls = r_class("NSBundle");
     if (!r_responds(bundleCls, "_setCoreMaterialOverrideRecipeBundleURL:")) {
-        *why = @"This iOS version has no CoreMaterial override.";
+        *why = @"此 iOS 版本没有 CoreMaterial 覆盖。";
         return false;
     }
     // Which recipes SpringBoard has used so far (open Control Center etc.
@@ -539,7 +539,7 @@ bool sbmat_apply_in_session(NSDictionary<NSString *, NSDictionary *> *config, NS
         url = dir ? r_msg2(r_class("NSURL"), "fileURLWithPath:", dir, 0, 0, 0) : 0;
         if (!r_is_objc_ptr(url)) {
             if (dir) r_release(dir);
-            *why = @"The recipes couldn't be written for SpringBoard.";
+            *why = @"无法为 SpringBoard 写入配方。";
             return false;
         }
     }
@@ -566,7 +566,7 @@ bool sbmat_apply_in_session(NSDictionary<NSString *, NSDictionary *> *config, NS
     if (files.count) {
         uint64_t layerCls = r_class("MTMaterialLayer");
         uint64_t probe = r_is_objc_ptr(layerCls) ? r_msg2_main(r_msg2_main(layerCls, "alloc", 0, 0, 0, 0), "init", 0, 0, 0, 0) : 0;
-        if (!r_is_objc_ptr(probe)) { *why = @"CoreMaterial couldn't load the recipes."; return false; }
+        if (!r_is_objc_ptr(probe)) { *why = @"CoreMaterial 无法载入配方。"; return false; }
         for (NSString *file in files) {
             uint64_t key = r_cfstr(file.stringByDeletingPathExtension.UTF8String);
             r_msg2_main(probe, "setRecipeName:", key, 0, 0, 0);

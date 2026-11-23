@@ -21,7 +21,7 @@ BOOL cleaner_custom_target_valid_relative(NSString *relative)
     if (![@[ @"Library", @"Documents", @"tmp" ] containsObject:parts[0]]) return NO;
     // The app's settings and the container's own bookkeeping stay out.
     if ([parts[0] isEqualToString:@"Library"] &&
-        [@[ @"Preferences", @"SyncedPreferences", @"Cookies", @"Saved Application State" ] containsObject:parts[1]]) return NO;
+        [@[ @"Preferences", @"SyncedPreferences", @"Cookies", @"已保存的应用状态" ] containsObject:parts[1]]) return NO;
     return YES;
 }
 
@@ -65,8 +65,8 @@ BOOL cleaner_custom_target_add(NSString *bundleID, NSString *appName, NSString *
                                NSString **error)
 {
     if (!bundleID.length || !cleaner_custom_target_valid_relative(relative)) {
-        if (error) *error = @"Only folders and files inside an app's Library, Documents or tmp can be added, "
-                            @"not those folders themselves and not the app's settings.";
+        if (error) *error = @"只能添加应用 Library、Documents 或 tmp 内部的文件和文件夹，"
+                            @"不能添加这些目录本身，也不能添加应用的设置。";
         return NO;
     }
     if (cleaner_custom_target_contains(bundleID, relative)) return YES;

@@ -13,7 +13,7 @@
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
 static NSString * const kTDCredit =
-    @"The .tendies format is Nugget's, by leminlimez. Installing follows Nugget and mond by rooootdev.";
+    @".tendies 格式来自 leminlimez 的 Nugget。安装流程参照 Nugget 与 rooootdev 的 mond。";
 
 typedef NS_ENUM(NSInteger, TDSection) {
     TDSectionActions,
@@ -31,7 +31,7 @@ typedef NS_ENUM(NSInteger, TDSection) {
 
 - (instancetype)init
 {
-    if ((self = [super initWithStyle:UITableViewStyleInsetGrouped])) self.title = @"Tendies Wallpapers";
+    if ((self = [super initWithStyle:UITableViewStyleInsetGrouped])) self.title = @"Tendies 壁纸";
     return self;
 }
 
@@ -59,12 +59,12 @@ typedef NS_ENUM(NSInteger, TDSection) {
         if ([message isEqualToString:kSettingsFullExploitRequiredMessage]) {
             me.status = kSettingsNoKernelAccessHint;
             [me.tableView reloadData];
-            settings_tool_needs_exploit(me, me.tableView, @"Tendies Wallpapers", ^{
+            settings_tool_needs_exploit(me, me.tableView, @"Tendies 壁纸", ^{
                 [weakSelf run:name work:work done:done];
             });
             return;
         }
-        me.status = ok ? message : (message ?: @"It didn't work. Check the log.");
+        me.status = ok ? message : (message ?: @"未生效，请查看日志。");
         if (done) done(ok, message);
         [me.tableView reloadData];
     });
@@ -95,10 +95,10 @@ typedef NS_ENUM(NSInteger, TDSection) {
         typeof(self) me = weakSelf;
         if (!ok || !me) return;
         NSString *body = [NSString stringWithFormat:
-            @"%lu wallpaper%@ added. Long-press the Lock Screen, tap +, and pick it from the gallery (Collections, or Photos for video wallpapers).%@",
+            @"已添加 %lu 张壁纸%@。长按锁屏、点按 +，从图库中选择（“合集”，视频壁纸在“照片”）%@",
             (unsigned long)count, count == 1 ? @"" : @"s",
             message.length ? [@"\n\n" stringByAppendingString:message] : @""];
-        UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"Wallpapers Installed" message:body
+        UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"壁纸已安装" message:body
                                                              preferredStyle:UIAlertControllerStyleAlert];
         [ac addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
         [me presentViewController:ac animated:YES completion:nil];
@@ -108,9 +108,9 @@ typedef NS_ENUM(NSInteger, TDSection) {
 - (void)removePaths:(NSArray<NSString *> *)paths title:(NSString *)title
 {
     UIAlertController *ac = [UIAlertController alertControllerWithTitle:title
-        message:@"Removes the wallpaper from the gallery and restarts PosterBoard. If it is your current Lock Screen, choose another one first. Apple's wallpapers aren't touched."
+        message:@"从图库移除该壁纸并重启 PosterBoard。如果它是你当前的锁屏，请先另选一个。Apple 自带壁纸不受影响。"
         preferredStyle:UIAlertControllerStyleAlert];
-    [ac addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     __weak typeof(self) weakSelf = self;
     [ac addAction:[UIAlertAction actionWithTitle:@"Remove" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *a) {
         [weakSelf run:@"Removing" work:^BOOL(NSString **message) {
@@ -135,16 +135,16 @@ typedef NS_ENUM(NSInteger, TDSection) {
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
 {
-    return section == TDSectionAdded ? @"Added by Cyanide" : nil;
+    return section == TDSectionAdded ? @"由 Cyanide 添加" : nil;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section
 {
     if (section == TDSectionActions) {
-        NSString *help = @"Adds .tendies wallpapers to the Lock Screen wallpaper gallery. PosterBoard restarts afterwards, so the Lock Screen may flash. Install a few at a time: PosterBoard gets slow with many custom wallpapers.";
+        NSString *help = @"把 .tendies 壁纸加入锁屏壁纸图库。之后 PosterBoard 会重启，锁屏可能闪烁。请每次安装少量：自定义壁纸过多时 PosterBoard 会变慢。";
         return self.status.length ? [NSString stringWithFormat:@"%@\n\n%@", self.status, help] : help;
     }
-    return self.added.count ? [@"Swipe a wallpaper to remove it.\n\n" stringByAppendingString:kTDCredit] : kTDCredit;
+    return self.added.count ? [@"横扫壁纸即可移除。\n\n" stringByAppendingString:kTDCredit] : kTDCredit;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -153,13 +153,13 @@ typedef NS_ENUM(NSInteger, TDSection) {
     UIListContentConfiguration *c = cell.defaultContentConfiguration;
     if (indexPath.section == TDSectionActions) {
         BOOL import = indexPath.row == 0;
-        c.text = import ? @"Install .tendies Files…" : @"Remove All Added";
+        c.text = import ? @"安装 .tendies 文件…" : @"移除全部已添加";
         c.image = [UIImage systemImageNamed:import ? @"square.and.arrow.down" : @"trash"];
         c.textProperties.color = self.busy ? UIColor.secondaryLabelColor
                                            : (import ? self.view.tintColor : UIColor.systemRedColor);
         c.imageProperties.tintColor = c.textProperties.color;
     } else if (self.added.count == 0) {
-        c.text = @"None yet";
+        c.text = @"暂无";
         c.textProperties.color = UIColor.secondaryLabelColor;
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
     } else {
@@ -183,7 +183,7 @@ typedef NS_ENUM(NSInteger, TDSection) {
     if (indexPath.row == 0) {
         [self pickFiles];
     } else {
-        [self removePaths:nil title:[NSString stringWithFormat:@"Remove %lu Wallpaper%@?",
+        [self removePaths:nil title:[NSString stringWithFormat:@"要移除 %lu 张壁纸%@吗？",
                                      (unsigned long)self.added.count, self.added.count == 1 ? @"" : @"s"]];
     }
 }
@@ -198,7 +198,7 @@ typedef NS_ENUM(NSInteger, TDSection) {
 {
     if (editingStyle != UITableViewCellEditingStyleDelete || ![self tableView:tableView canEditRowAtIndexPath:indexPath]) return;
     NSDictionary *item = self.added[indexPath.row];
-    [self removePaths:@[item[@"path"]] title:[NSString stringWithFormat:@"Remove “%@”?", item[@"name"]]];
+    [self removePaths:@[item[@"path"]] title:[NSString stringWithFormat:@"要移除“%@”吗？", item[@"name"]]];
 }
 
 @end

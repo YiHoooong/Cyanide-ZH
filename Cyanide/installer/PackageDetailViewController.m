@@ -96,14 +96,14 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
     }
 
     UIAlertController *alert =
-        [UIAlertController alertControllerWithTitle:@"Call Recording Disclosure"
+        [UIAlertController alertControllerWithTitle:@"通话录音披露"
                                             message:@"Silencing call-recording disclosure sounds may violate consent, notice, or privacy laws where you live or where the call participants are located. Only use this where you have permission and understand the rules that apply to you.\n\nCyanide modifies CallServices system files and keeps a backup when possible. You can restore the original sounds from this package."
                                      preferredStyle:UIAlertControllerStyleAlert];
 
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel"
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消"
                                               style:UIAlertActionStyleCancel
                                             handler:nil]];
-    [alert addAction:[UIAlertAction actionWithTitle:@"I Understand, Silence"
+    [alert addAction:[UIAlertAction actionWithTitle:@"我已了解，静音"
                                               style:UIAlertActionStyleDestructive
                                             handler:^(UIAlertAction *_) {
         [d setBool:YES forKey:kCallRecordingDisclosureAcceptedDefault];
@@ -202,15 +202,15 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
 {
     if (intent != PackageQueueIntentNone) {
         if (self.package.kind == PackageInstallKindNanoRegistry) {
-            return (intent == PackageQueueIntentInstall) ? @"Cancel Apply" : @"Cancel Remove";
+            return (intent == PackageQueueIntentInstall) ? @"取消应用" : @"取消移除";
         }
         if (self.package.kind == PackageInstallKindCallRecordingSound) {
-            return (intent == PackageQueueIntentInstall) ? @"Cancel Silence" : @"Cancel Restore";
+            return (intent == PackageQueueIntentInstall) ? @"取消静音" : @"取消还原";
         }
         if (self.package.kind == PackageInstallKindHideHomeBar) {
-            return (intent == PackageQueueIntentInstall) ? @"Cancel Hide" : @"Cancel Restore";
+            return (intent == PackageQueueIntentInstall) ? @"取消隐藏" : @"取消还原";
         }
-        return (intent == PackageQueueIntentInstall) ? @"Cancel Disable" : @"Cancel Enable";
+        return (intent == PackageQueueIntentInstall) ? @"取消禁用" : @"取消启用";
     }
     if (self.package.kind == PackageInstallKindNanoRegistry) return @"Apply/Remove";
     if (self.package.kind == PackageInstallKindCallRecordingSound) return @"Silence/Restore";
@@ -222,23 +222,23 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
 {
     PackageQueueIntent intent = [[PackageQueue sharedQueue] intentForPackage:self.package];
     if (self.package.kind == PackageInstallKindNanoRegistry) {
-        if (intent == PackageQueueIntentInstall) return @"Apply Pending";
-        if (intent == PackageQueueIntentUninstall) return @"Remove Pending";
-        return @"Manual Control";
+        if (intent == PackageQueueIntentInstall) return @"待应用";
+        if (intent == PackageQueueIntentUninstall) return @"待移除";
+        return @"手动控制";
     }
     if (self.package.kind == PackageInstallKindCallRecordingSound) {
-        if (intent == PackageQueueIntentInstall) return @"Silence Pending";
-        if (intent == PackageQueueIntentUninstall) return @"Restore Pending";
-        return @"Manual Control";
+        if (intent == PackageQueueIntentInstall) return @"待静音";
+        if (intent == PackageQueueIntentUninstall) return @"还原待定";
+        return @"手动控制";
     }
     if (self.package.kind == PackageInstallKindHideHomeBar) {
-        if (intent == PackageQueueIntentInstall) return @"Hide Pending";
-        if (intent == PackageQueueIntentUninstall) return @"Restore Pending";
+        if (intent == PackageQueueIntentInstall) return @"待隐藏";
+        if (intent == PackageQueueIntentUninstall) return @"还原待定";
         return self.package.isInstalled ? @"Hidden" : @"Ready";
     }
-    if (intent == PackageQueueIntentInstall) return @"Disable Pending";
-    if (intent == PackageQueueIntentUninstall) return @"Enable Pending";
-    return @"Manual Control";
+    if (intent == PackageQueueIntentInstall) return @"待禁用";
+    if (intent == PackageQueueIntentUninstall) return @"待启用";
+    return @"手动控制";
 }
 
 - (NSString *)toggleStateText
@@ -246,14 +246,14 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
     PackageQueueIntent intent = [[PackageQueue sharedQueue] intentForPackage:self.package];
     if ([self isRepoTweakPackage]) {
         BOOL hasUpdate = [self repoTweakHasUpdate];
-        if (intent == PackageQueueIntentInstall) return hasUpdate ? @"Update Pending" : @"Install Pending";
-        if (intent == PackageQueueIntentUninstall) return @"Removal Pending";
-        if (hasUpdate) return @"Update Available";
+        if (intent == PackageQueueIntentInstall) return hasUpdate ? @"待更新" : @"待安装";
+        if (intent == PackageQueueIntentUninstall) return @"移除待定";
+        if (hasUpdate) return @"有可用更新";
         if (self.package.isInstalled) return @"Installed";
         return @"Available";
     }
-    if (intent == PackageQueueIntentInstall) return @"Activation Pending";
-    if (intent == PackageQueueIntentUninstall) return @"Deactivation Pending";
+    if (intent == PackageQueueIntentInstall) return @"激活待定";
+    if (intent == PackageQueueIntentUninstall) return @"停用待定";
     if (self.package.isInstalled) return @"Installed";
     return @"Inactive";
 }
@@ -270,7 +270,7 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
 
 - (NSString *)packageStateText
 {
-    if ([self isDirectToolPackage]) return @"Manual Control";
+    if ([self isDirectToolPackage]) return @"手动控制";
     return [self isManualPackage] ? [self manualStateText] : [self toggleStateText];
 }
 
@@ -299,10 +299,10 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
         return NO;
     }
 
-    BOOL hideHomeBarReason = [reason containsString:@"Hide Home Bar"];
+    BOOL hideHomeBarReason = [reason containsString:@"隐藏 Home 条"];
     UIAlertController *alert =
-        [UIAlertController alertControllerWithTitle:(hideHomeBarReason ? @"Run Hide Home Bar Alone" : @"Cannot Queue Install")
-                                            message:reason ?: @"This package cannot be queued yet."
+        [UIAlertController alertControllerWithTitle:(hideHomeBarReason ? @"单独运行隐藏 Home 条" : @"无法加入安装队列")
+                                            message:reason ?: @"此软件包暂时无法加入队列。"
                                      preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"OK"
                                               style:UIAlertActionStyleDefault
@@ -344,14 +344,14 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
     // weakly; a strong capture kept the detail page alive after it was popped.
     __weak typeof(self) weakSelf = self;
     if (self.package.kind == PackageInstallKindNanoRegistry) {
-        UIAction *apply = [UIAction actionWithTitle:@"Apply Pairing Override"
+        UIAction *apply = [UIAction actionWithTitle:@"应用配对覆盖"
                                               image:[UIImage systemImageNamed:@"applewatch.radiowaves.left.and.right"]
                                          identifier:nil
                                             handler:^(__kindof UIAction *_) {
             [weakSelf queueManualIntent:PackageQueueIntentInstall];
         }];
 
-        UIAction *remove = [UIAction actionWithTitle:@"Remove Pairing Override"
+        UIAction *remove = [UIAction actionWithTitle:@"移除配对覆盖"
                                                image:[UIImage systemImageNamed:@"xmark.circle"]
                                           identifier:nil
                                              handler:^(__kindof UIAction *_) {
@@ -359,11 +359,11 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
         }];
         remove.attributes = UIMenuElementAttributesDestructive;
 
-        return [UIMenu menuWithTitle:@"Watch Pairing Override" children:@[apply, remove]];
+        return [UIMenu menuWithTitle:@"手表配对覆盖" children:@[apply, remove]];
     }
 
     if (self.package.kind == PackageInstallKindCallRecordingSound) {
-        UIAction *silence = [UIAction actionWithTitle:@"Silence Disclosure Sounds"
+        UIAction *silence = [UIAction actionWithTitle:@"静音披露提示音"
                                                 image:[UIImage systemImageNamed:@"speaker.slash.fill"]
                                            identifier:nil
                                               handler:^(__kindof UIAction *_) {
@@ -377,18 +377,18 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
         }];
         silence.attributes = UIMenuElementAttributesDestructive;
 
-        UIAction *restore = [UIAction actionWithTitle:@"Restore Original Sounds"
+        UIAction *restore = [UIAction actionWithTitle:@"还原原始提示音"
                                                 image:[UIImage systemImageNamed:@"speaker.wave.2.fill"]
                                            identifier:nil
                                               handler:^(__kindof UIAction *_) {
             [weakSelf queueManualIntent:PackageQueueIntentUninstall];
         }];
 
-        return [UIMenu menuWithTitle:@"Call Recording Sound" children:@[silence, restore]];
+        return [UIMenu menuWithTitle:@"通话录音提示音" children:@[silence, restore]];
     }
 
     if (self.package.kind == PackageInstallKindHideHomeBar) {
-        UIAction *hide = [UIAction actionWithTitle:@"Hide Home Bar"
+        UIAction *hide = [UIAction actionWithTitle:@"隐藏 Home 条"
                                              image:[UIImage systemImageNamed:@"line.3.horizontal"]
                                         identifier:nil
                                            handler:^(__kindof UIAction *_) {
@@ -396,17 +396,17 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
         }];
         hide.attributes = UIMenuElementAttributesDestructive;
 
-        UIAction *restore = [UIAction actionWithTitle:@"Restore Home Bar"
+        UIAction *restore = [UIAction actionWithTitle:@"恢复 Home 条"
                                                 image:[UIImage systemImageNamed:@"arrow.clockwise"]
                                            identifier:nil
                                               handler:^(__kindof UIAction *_) {
             [weakSelf queueManualIntent:PackageQueueIntentUninstall];
         }];
 
-        return [UIMenu menuWithTitle:@"Home Bar" children:@[hide, restore]];
+        return [UIMenu menuWithTitle:@"Home 条" children:@[hide, restore]];
     }
 
-    UIAction *disable = [UIAction actionWithTitle:@"Disable OTA Updates"
+    UIAction *disable = [UIAction actionWithTitle:@"禁用 OTA 更新"
                                             image:[UIImage systemImageNamed:@"icloud.slash"]
                                        identifier:nil
                                           handler:^(__kindof UIAction *_) {
@@ -414,14 +414,14 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
     }];
     disable.attributes = UIMenuElementAttributesDestructive;
 
-    UIAction *enable = [UIAction actionWithTitle:@"Enable OTA Updates"
+    UIAction *enable = [UIAction actionWithTitle:@"启用 OTA 更新"
                                            image:[UIImage systemImageNamed:@"icloud"]
                                       identifier:nil
                                          handler:^(__kindof UIAction *_) {
         [weakSelf queueManualIntent:PackageQueueIntentUninstall];
     }];
 
-    return [UIMenu menuWithTitle:@"OTA Updates" children:@[disable, enable]];
+    return [UIMenu menuWithTitle:@"OTA 系统更新" children:@[disable, enable]];
 }
 
 - (instancetype)initWithPackage:(Package *)package
@@ -575,7 +575,7 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
     // Subtitle: Category · Version
     UILabel *subLabel = [[UILabel alloc] init];
     subLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    subLabel.text = [NSString stringWithFormat:@"%@  ·  Version %@", self.package.category, self.package.version];
+    subLabel.text = [NSString stringWithFormat:@"%@  ·  版本 %@", self.package.category, self.package.version];
     subLabel.font = [UIFont systemFontOfSize:14.0 weight:UIFontWeightMedium];
     subLabel.textColor = [UIColor.labelColor colorWithAlphaComponent:0.45];
     subLabel.textAlignment = NSTextAlignmentCenter;
@@ -602,7 +602,7 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
                          background:[color colorWithAlphaComponent:0.16]
                           textColor:color];
     } else if (self.package.creatorOnly) {
-        badge = [self badgeWithText:@"IN DEVELOPMENT"
+        badge = [self badgeWithText:@"开发中"
                          background:[UIColor.systemPurpleColor colorWithAlphaComponent:0.16]
                           textColor:UIColor.systemPurpleColor];
     } else if ([self.package.category caseInsensitiveCompare:@"Beta"] == NSOrderedSame) {
@@ -704,7 +704,7 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
         title = @"Disabled";
         tint = UIColor.secondaryLabelColor;
     } else if (directTool) {
-        title = @"Open Controls";
+        title = @"打开控制";
         tint = self.view.tintColor;
         style = UIBarButtonItemStyleDone;
     } else if (manual) {
@@ -714,14 +714,14 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
             : self.view.tintColor;
         if (intent == PackageQueueIntentNone) style = UIBarButtonItemStyleDone;
     } else if ([self canApplyNow]) {
-        title = @"Apply Now";
+        title = @"立即应用";
         tint = self.view.tintColor;
         style = UIBarButtonItemStyleDone;
     } else if (intent != PackageQueueIntentNone) {
-        title = @"Cancel";
+        title = @"取消";
         tint = UIColor.secondaryLabelColor;
     } else if (installed && [self isLiveWPPackage] && [self hasSettingsBundle]) {
-        title = @"Change Video";
+        title = @"更换视频";
         tint = self.view.tintColor;
         style = UIBarButtonItemStyleDone;
     } else if ([self repoTweakHasUpdate]) {
@@ -735,16 +735,16 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
         title = @"Deactivate";
         tint = UIColor.systemRedColor;
     } else if (self.package.creatorOnly) {
-        title = @"In Development";
+        title = @"开发中";
         tint = UIColor.secondaryLabelColor;
     } else if (self.package.isInstallDisabled) {
         title = @"Disabled";
         tint = UIColor.secondaryLabelColor;
     } else if ([self needsThemeBeforeInstall]) {
-        title = @"Select Theme";
+        title = @"选择主题";
         style = UIBarButtonItemStyleDone;
     } else if ([self needsLiveWPVideoBeforeInstall]) {
-        title = @"Select Video";
+        title = @"选择视频";
         style = UIBarButtonItemStyleDone;
     } else if ([self isRepoTweakPackage]) {
         title = @"Install";
@@ -785,7 +785,7 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
 - (UIMenu *)applyNowMenu
 {
     __weak typeof(self) weakSelf = self;
-    UIAction *apply = [UIAction actionWithTitle:@"Apply Now"
+    UIAction *apply = [UIAction actionWithTitle:@"立即应用"
                                           image:[UIImage systemImageNamed:@"bolt.fill"]
                                      identifier:nil
                                         handler:^(__kindof UIAction *action) {
@@ -872,17 +872,17 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
 {
     BOOL snowBoardLite = [self.package.identifier isEqualToString:@"com.darksword.snowboardlite"];
     NSString *message = snowBoardLite
-        ? @"SnowBoard Lite needs a selected theme before it can be activated. Choose iOS 6 Theme or import a SnowBoard/IconBundles theme first."
-        : @"Icon themes need a selected theme before they can be activated. Choose iOS 6 Theme or import a custom theme first.";
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Select a Theme"
+        ? @"SnowBoard Lite 需要先选择主题才能激活。请先选择 iOS 6 主题或导入 SnowBoard/IconBundles 主题。"
+        : @"图标主题需要先选择主题才能激活。请先选择 iOS 6 主题或导入自定义主题。";
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"选择主题"
                                                                    message:message
                                                             preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Open Theme Settings"
+    [alert addAction:[UIAlertAction actionWithTitle:@"打开主题设置"
                                              style:UIAlertActionStyleDefault
                                            handler:^(UIAlertAction *_) {
         [self navigateToSettingsSection];
     }]];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel"
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消"
                                              style:UIAlertActionStyleCancel
                                            handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
@@ -891,24 +891,24 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
 - (void)promptConfigureBeforeInstall
 {
     NSString *msg = [NSString stringWithFormat:
-        @"%@ has configurable options. Set them up first so the tweak applies with your preferences on the first activation.",
+        @"%@ 有可配置选项。请先设置好，插件首次激活时就会按你的偏好应用。",
         self.package.name];
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Customize Before Activating?"
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"要在激活前先配置吗？"
                                                                    message:msg
                                                             preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Configure First"
+    [alert addAction:[UIAlertAction actionWithTitle:@"先配置"
                                              style:UIAlertActionStyleDefault
                                            handler:^(UIAlertAction *_) {
         [self navigateToSettingsSection];
     }]];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Activate Anyway"
+    [alert addAction:[UIAlertAction actionWithTitle:@"仍要激活"
                                              style:UIAlertActionStyleDefault
                                            handler:^(UIAlertAction *_) {
         if ([self presentQueueConflictIfNeededForIntent:PackageQueueIntentInstall]) return;
         log_user("[INSTALLER] Pending activation: %s\n", self.package.name.UTF8String);
         [[PackageQueue sharedQueue] toggleForPackage:self.package];
     }]];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel"
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消"
                                              style:UIAlertActionStyleCancel
                                            handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
@@ -1029,7 +1029,7 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
 
         void (^updateLabel)(float) = ^(float value) {
             valueLabel.text = fabs(value - defVal) < 0.01
-                ? [NSString stringWithFormat:@"%.2f (Def)", value]
+                ? [NSString stringWithFormat:@"%.2f（默认）", value]
                 : [NSString stringWithFormat:@"%.2f", value];
         };
         updateLabel(slider.value);
@@ -1081,9 +1081,9 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
 - (NSString *)detailSectionTitle:(NSInteger)section
 {
     switch ([self sectionAtIndex:section]) {
-        case PackageDetailSectionKnownIssues:  return @"Known Issues";
+        case PackageDetailSectionKnownIssues:  return @"已知问题";
         case PackageDetailSectionAction:       return @"Configure";
-        case PackageDetailSectionSettings:     return @"Current Settings";
+        case PackageDetailSectionSettings:     return @"当前设置";
         case PackageDetailSectionRepoOptions:  return @"Options";
         default: return nil;
     }
@@ -1103,12 +1103,12 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section
 {
     if ([self sectionAtIndex:section] == PackageDetailSectionAction) {
-        return @"Settings can be changed before or after activation.";
+        return @"设置可在激活前或激活后更改。";
     }
     if ([self sectionAtIndex:section] == PackageDetailSectionRepoOptions) {
         return self.package.repoTweakUsesQuickLoader
-            ? @"Saved here before install; QuickLoader applies these values when the queued package runs."
-            : @"Saved here before install; Cyanide applies these values through the native package backend.";
+            ? @"安装前保存在这里；排队软件包运行时 QuickLoader 会应用这些值。"
+            : @"安装前保存在这里；Cyanide 会通过原生软件包后端应用这些值。";
     }
     return nil;
 }
@@ -1257,7 +1257,7 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
                 UILabel *note = [[UILabel alloc] init];
                 note.translatesAutoresizingMaskIntoConstraints = NO;
                 note.numberOfLines = 0;
-                note.text = @"Only install scripts from sources you trust.";
+                note.text = @"只安装来自可信源的脚本。";
                 note.font = [UIFont systemFontOfSize:13.0 weight:UIFontWeightMedium];
                 note.textColor = [UIColor.labelColor colorWithAlphaComponent:0.35];
                 [cell.contentView addSubview:note];
@@ -1334,13 +1334,13 @@ typedef NS_ENUM(NSInteger, PackageDetailSection) {
                                               reuseIdentifier:@"ActionCell"];
             }
             cell.textLabel.text = [self isDirectToolPackage]
-                ? [NSString stringWithFormat:@"Open %@", self.package.name]
-                : [NSString stringWithFormat:@"Customize %@", self.package.name];
+                ? [NSString stringWithFormat:@"打开 %@", self.package.name]
+                : [NSString stringWithFormat:@"配置 %@", self.package.name];
             cell.textLabel.textColor = self.view.tintColor;
             cell.textLabel.font = [UIFont systemFontOfSize:17.0 weight:UIFontWeightSemibold];
             cell.detailTextLabel.text = [self isDirectToolPackage]
-                ? @"Choose a target and run actions directly"
-                : @"Adjust options in the Settings tab";
+                ? @"选择目标并直接执行操作"
+                : @"在设置标签页调整选项";
             cell.detailTextLabel.textColor = UIColor.secondaryLabelColor;
             cell.imageView.image = [UIImage systemImageNamed:@"slider.horizontal.3"];
             cell.imageView.tintColor = self.view.tintColor;

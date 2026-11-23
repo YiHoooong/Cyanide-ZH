@@ -1,193 +1,187 @@
-## Supported devices
+# Cyanide（中文汉化版）
 
-**iPhone and iPad running iOS/iPadOS 17.0 – 18.7.1, or 26.0 – 26.0.1.**
+Cyanide 是一个基于 DarkSword 内核读写原语的 iOS 插件运行器。本仓库为其**完全汉化** fork：应用内全部界面文本均已翻译为简体中文。
+
+## 支持的设备
+
+**运行 iOS/iPadOS 17.0 – 18.7.1 或 26.0 – 26.0.1 的 iPhone 与 iPad。**
 
 | | |
 | --- | --- |
-| ✅ Supported | iOS/iPadOS **17.0 – 18.7.1** |
-| ✅ Supported | iOS/iPadOS **26.0 – 26.0.1** |
-| ❌ Not supported | iOS 16.x and earlier, **18.7.2 – 25.x**, **26.1 and later** |
-| ❌ Not supported | **iPhone 17 family (A19 / A19 Pro)** and **M5** — Memory Integrity Enforcement blocks the exploit |
+| ✅ 支持 | iOS/iPadOS **17.0 – 18.7.1** |
+| ✅ 支持 | iOS/iPadOS **26.0 – 26.0.1** |
+| ❌ 不支持 | iOS 16.x 及更早、**18.7.2 – 25.x**、**26.1 及更高** |
+| ❌ 不支持 | **iPhone 17 系列（A19 / A19 Pro）** 与 **M5** —— 内存完整性强制（Memory Integrity Enforcement）会拦截漏洞利用 |
 
-**iOS 15 and 16 are out of scope by choice, not by limitation.** Every device on
-those versions is jailbreakable with
-[Dopamine](https://github.com/opa334/Dopamine), so Cyanide has nothing to add —
-use that instead.
+**iOS 15 与 16 是主动放弃而非能力不足。** 这些版本上的设备都能用
+[Dopamine](https://github.com/opa334/Dopamine) 越狱，Cyanide 没有可补充的
+东西——用那个即可。
 
-iOS 17 is deliberately supported in full, including versions a jailbreak already
-covers. Coverage there depends on the device, and Cyanide does not jailbreak the
-device at all: tweaks are applied in memory for the current boot, so apps that
-refuse to run on a jailbroken device are unaffected.
+iOS 17 被刻意全面支持，包括已有越狱覆盖的版本。具体覆盖取决于设备，
+而且 Cyanide 完全不越狱设备：插件只在内存中对本次开机生效，因此
+拒绝在越狱设备上运行的应用不受影响。
 
-Any iPhone or iPad on a supported version should work, including A-series and
-M-series iPads. There is no separate device whitelist: Cyanide checks the
-iOS version and finds its kernel offsets by scanning, so hardware from older
-A-series through A18 is handled by the same code.
+任何运行受支持版本的 iPhone 或 iPad 都应该可用，包括 A 系列与
+M 系列 iPad。没有单独的设备白名单：Cyanide 检查 iOS 版本并通过扫描
+寻找内核偏移，从老 A 系列到 A18 的硬件都由同一套代码处理。
 
-Confirmed working on iPhone 16 Pro Max (iOS 18.5), iPhone 15 Pro Max
-(iOS 17.3.1) and M-series iPad.
+已在 iPhone 16 Pro Max（iOS 18.5）、iPhone 15 Pro Max（iOS 17.3.1）
+和 M 系列 iPad 上确认可用。
 
-> **Note:** these devices are refused up front by model identifier
-> (`iPhone18,x` and above, `iPad17,x` and above), so you get a clear message
-> rather than a failed exploit.
+> **注意：** 这些设备会先按机型标识（`iPhone18,x` 及以上、`iPad17,x`
+> 及以上）直接拒绝，所以你会看到明确的提示，而不是一次失败的利用。
 
-## Tweaks
+## 插件
 
-Installed from the in-app Installer. Most tweaks are applied in memory for the
-current boot, and a respring undoes them. A few write files or system settings
-that last beyond a respring or reboot: the OTA blocker, the call recording
-sound, Hide Home Bar, Passcode Style, Lock Screen Duration, Watch Pairing
-Override, Supervision and the Daemon Manager stay until you switch them off in Cyanide, and
-the Cache Cleaner deletes what you select.
+从应用内的安装器（Installer）安装。多数插件在内存中对本次开机生效，
+重加载（respring）即可撤销。少数会写入文件或系统设置、跨重加载或重启
+保留：OTA 拦截、通话录音提示音、隐藏 Home 条、密码盘样式、锁屏亮屏
+时长、手表配对覆盖、监管模式与守护进程管理器会一直生效，直到你在
+Cyanide 中关闭；缓存清理器会删除你选择的内容。
 
-### Home Screen
+### 主屏幕
 
-| Tweak | What it does |
+| 插件 | 作用 |
 | --- | --- |
-| **SBCustomizer** | Custom dock, grid, app placement, and page counts |
-| **Home Layout Extras** | Extra home/dock padding and per-icon scaling |
-| **Hide Home Bar** | Hide the bottom home indicator |
+| **SBCustomizer** | 自定义程序坞、网格、应用位置与页数 |
+| **Home Layout Extras** | 额外主屏/程序坞边距与逐图标缩放 |
+| **Hide Home Bar** | 隐藏底部主屏幕指示条 |
 
 ### SpringBoard
 
-| Tweak | What it does |
+| 插件 | 作用 |
 | --- | --- |
-| **Axon Lite** | Group Notification Center requests by app |
-| **App Switcher Grid** | Grid-style app switcher |
-| **iPad Dock** | iPad-style Dock with the App Library button |
-| **Locked App Previews** | Notification previews for apps locked with Face ID (iOS 18+) |
-| **CarPlay without Siri** | Lifts iOS 18's "To use CarPlay, enable Siri" lock-out while Siri stays off, per connection: Control Center button, Shortcuts action (for a "When CarPlay connects" automation), `cyanide://carplay` or Run |
-| **SpringBoard Tools** | Apply the dock, folder and Control Center look from Settings → Lara with the other tweaks |
-| **Lock Screen Duration** | Keep the lock screen awake longer |
-| **QuickLoader** | Executes custom .js code |
-| **Disable App Library** | Remove the App Library page |
-| **Disable Icon Fly-In** | Skip the icon spring animation |
-| **Hide New App Dots** | No blue dot next to new or updated apps |
-| **Zero Wake Animation** | Snap on instantly when waking |
-| **Zero Backlight Fade** | Instant lock/unlock backlight |
-| **Double-Tap to Lock** | Lock with a wallpaper double-tap |
-| **Drag Coefficient** | Custom SpringBoard animation speed multiplier |
+| **Axon Lite** | 按应用分组通知中心请求 |
+| **App Switcher Grid** | 网格样式多任务切换器 |
+| **iPad Dock** | 带 App 资源库按钮的 iPad 式程序坞 |
+| **Locked App Previews** | Face ID 锁定应用的通知预览（iOS 18+） |
+| **CarPlay without Siri** | 在 Siri 保持关闭的情况下解除 iOS 18 的「要使用 CarPlay，请开启 Siri」限制，按连接生效：控制中心按钮、快捷指令操作（可做「连接 CarPlay 时」自动化）、`cyanide://carplay` 链接或运行 |
+| **SpringBoard Tools** | 把「设置 → Lara」中的程序坞、文件夹与控制中心外观随其他插件一起应用 |
 
-### Status Bar
+### 锁屏与安全
 
-| Tweak | What it does |
+| 插件 | 作用 |
 | --- | --- |
-| **StatBar** | Battery temperature + free RAM overlay |
-| **NSBar** | Network speed overlay in the status bar |
-| **NiceBar Lite** | NiceBar-style status labels |
+| **FastLockX Lite** | Face ID 重试与解锁控制 |
+| **Passcode Style** | 自定义锁屏密码盘图案 |
+| **Lock Screen Duration** | 让锁屏亮得更久 |
+| **Double Tap to Lock** | 双击壁纸锁定 |
 
-### Theming
+### 主题
 
-| Tweak | What it does |
+| 插件 | 作用 |
 | --- | --- |
-| **SnowBoard Lite** | Local SnowBoard-style icon themes |
-| **LiveWP** | Video wallpaper for Home and Lock Screen |
-| **Passcode Style** | Custom Lock Screen passcode keypad artwork |
+| **SnowBoard Lite** | 本地 SnowBoard 风格图标主题 |
+| **LiveWP** | 主屏与锁屏视频壁纸 |
+| **iOS 6 Theme** | iOS 6 风格图标 |
 
-### System
+### 状态栏
 
-| Tweak | What it does |
+| 插件 | 作用 |
 | --- | --- |
-| **Powercuff** | Underclock the CPU/GPU thermal pressure |
-| **Location Simulator** | CoreLocation static point simulation, plus a Location Services on/off switch |
-| **Watch Pairing Override** | Pair a newer watch or revive an older one |
-| **Call Recording Sound** | Silence disclosure start/stop sounds |
-| **OTA Updates** | Enable or disable over-the-air system updates |
-| **Supervision** | Mark the device as supervised (organization "Cyanide"), so supervised-only profile restrictions can be installed |
+| **StatBar** | 电池温度 + 可用内存覆盖层 |
+| **NSBar** | 状态栏网速覆盖层 |
+| **NiceBar Lite** | NiceBar 风格状态栏标签 |
+
+### 系统
+
+| 插件 | 作用 |
+| --- | --- |
+| **Powercuff** | 按热压力降低 CPU/GPU 频率 |
+| **Location Simulator** | CoreLocation 定点模拟，外加定位服务开关 |
+| **Watch Pairing Override** | 配对新表或救活旧表 |
+| **Call Recording Sound** | 静音通话披露开始/结束提示音 |
+| **OTA Updates** | 启用或禁用 OTA 系统更新 |
+| **Supervision** | 把设备标记为受监管（组织名「Cyanide」），可安装仅限监管设备的描述文件限制 |
 
 ### Beta
 
-| Tweak | What it does |
+| 插件 | 作用 |
 | --- | --- |
-| **Dynamic Stage Lite** | Two floating app windows, iPad-style |
-| **FastLockX Lite** | Face ID retry + unlock controls |
+| **Dynamic Stage Lite** | 两个悬浮应用窗口，iPad 风格 |
 
-## Tools
+## 工具
 
-### Settings → Lara
+### 设置 → Lara
 
-Ideas from [lara](https://github.com/rooootdev/lara) by rooootdev, ported with
-his permission.
+灵感来自 rooootdev 的 [lara](https://github.com/rooootdev/lara)，
+经其许可移植。
 
-| Tool | What it does |
+| 工具 | 作用 |
 | --- | --- |
-| **Performance HUD** | Core Animation's frame-rate and GPU overlay, until you turn it off or restart |
-| **Debug Overlay** | Apple's internal UIKit inspector; double-tap the status bar to open it |
-| **Upside Down** | Let the Home Screen and Lock Screen rotate upside down |
-| **Hidden Settings** | Hidden iOS preferences |
-| **JIT Enabler** | Open a development-signed app with JIT (emulators and similar) |
-| **3-App Limit** | Free the 3-app slots of a free Apple ID's sideloaded apps |
-| **Wallet Card Art** | Replace a Wallet card's picture with your own (cosmetic, restorable) |
-| **App Decrypt** | Make a decrypted IPA of an installed App Store app |
-| **SpringBoard Tools** | Your own tint and blur, or none, for the dock, folders, Control Center, notifications and the app switcher |
-| **Font Overwrite** | Replace the system font, its italic and monospaced variants, or the Lock Screen clock, in memory only; plain fonts are adapted on the device |
+| **Performance HUD** | Core Animation 的帧率与 GPU 覆盖层，直到关闭或重启 |
+| **Debug Overlay** | Apple 内部 UIKit 检查器；双击状态栏打开 |
+| **Upside Down** | 允许主屏与锁屏倒转旋转 |
+| **Hidden Settings** | 隐藏的 iOS 偏好设置 |
+| **JIT Enabler** | 以 JIT 打开开发签名的应用（模拟器等） |
+| **3-App Limit** | 释放免费 Apple ID 自签应用的三应用名额 |
+| **Wallet Card Art** | 用自己的图片替换钱包卡片图案（仅外观，可还原） |
+| **App Decrypt** | 为已安装的 App Store 应用制作解密 IPA |
+| **SpringBoard Tools** | 自定义程序坞、文件夹、控制中心、通知与多任务切换器的着色模糊效果 |
+| **Font Overwrite** | 在内存中替换系统字体、斜体与等宽变体或锁屏时钟；普通字体会先在设备上适配 |
 
-### Settings → Gravity Lite
+### 设置 → Gravity Lite
 
-Make home-screen icons fall with physics, steered by tilting the device. Not
-an Installer package: Activate and Deactivate on its Settings page.
+让主屏图标受重力物理作用坠落，倾斜设备控制方向。不是安装器软件包：
+在其设置页面上激活/停用。
 
-### Settings → System
+### 设置 → 系统
 
-| Tool | What it does |
+| 工具 | 作用 |
 | --- | --- |
-| **Process Viewer** | Running processes, with details and actions |
-| **File Browser** | Browse the file system, with a plist editor and optional read-only root access |
-| **Daemon Manager** | Turn system daemons off or on (persists) |
-| **System Info** | Device, battery and kernel access details |
-| **Cache Cleaner** | Delete selected caches |
+| **Process Viewer** | 查看运行中的进程，含详情与操作 |
+| **File Browser** | 浏览文件系统，含 plist 编辑器与可选只读 root 访问 |
+| **Daemon Manager** | 开关系统守护进程（持久生效） |
+| **System Info** | 设备、电池与内核访问详情 |
+| **Cache Cleaner** | 删除选中的缓存 |
 
-**Location Services** can also be switched from a Control Center control
-(iOS 18) or a Shortcuts / Action button action (iOS 17 and later).
+**定位服务**也可以通过控制中心控件（iOS 18）或快捷指令 / 操作按钮
+操作（iOS 17 及更高）切换。
 
-**Respring** and **Reboot** are also Control Center buttons (iOS 18) and
-Shortcuts / Siri / Action button actions (iOS 17 and later), and can be opened
-as `cyanide://respring` and `cyanide://reboot` links once "Respring and reboot
-links" is on. Reboot needs kernel access from an earlier run.
+**重加载**与**重启**也是控制中心按钮（iOS 18）和快捷指令 / Siri /
+操作按钮操作（iOS 17 及更高），打开「重加载与重启链接」后还可以用
+`cyanide://respring` 和 `cyanide://reboot` 链接打开。重启需要之前
+运行留下的内核访问。
 
-**CarPlay without Siri** is also a Control Center button (iOS 18), a Shortcuts
-action and a `cyanide://carplay` link. For hands-free use, create a personal
-automation in Shortcuts: **CarPlay → Connects → Run Immediately**, with the
-"CarPlay without Siri" action. It needs the package turned on and kernel
-access from an earlier run.
+**无 Siri 使用 CarPlay** 也是控制中心按钮（iOS 18）、快捷指令操作与
+`cyanide://carplay` 链接。免提用法：在快捷指令中创建个人自动化
+**CarPlay → 连接时 → 立即运行**，使用「无 Siri 使用 CarPlay」操作。
+需要开启对应软件包并有之前运行留下的内核访问。
 
-## Options
+## 选项
 
-Under **Settings → Launch Options**:
+位于**设置 → 启动选项**：
 
-| Option | |
+| 选项 | |
 | --- | --- |
-| **A18 exploit path** | `pe_v3` (default), `pe_v1` (compatibility) or `pe_v2` (legacy fallback). A18/M4 only. |
-| **A18 interleaved search, memory shaping, bounded search** | Fine-tuning for the `pe_v1` path. A18/M4 only. |
-| **Auto-retry failed chain runs** | Re-run the chain automatically after a miss, up to an attempt cap. |
-| **Controlled panic on injection wedge** | Diagnostic: write the log and panic on purpose instead of waiting for a watchdog reset. |
-| **Tweak apply speed** | Compatible / Fast / Fastest. Higher settings cut the delay paid between the remote calls that apply a tweak. |
-| **Verbose logging** | Full RemoteCall internals in the log, for bug reports. |
-| **Location Services links** | Allow `cyanide://location-services` links (off by default). |
-| **Respring and reboot links** | Allow `cyanide://respring` and `cyanide://reboot` links (off by default). |
-| **Repo sources** | Show or hide the Sources tab and repo tweaks. |
-| **Apply Installer changes right away** | With saved kernel access, activating or deactivating a tweak applies just that tweak at once instead of queueing it (on by default). |
-| **Keep app alive in background** | Needed by tweaks that keep running while Cyanide is backgrounded. |
+| **A18 漏洞利用路径** | `pe_v3`（默认）、`pe_v1`（兼容）或 `pe_v2`（旧版回退）。仅限 A18/M4。 |
+| **A18 交错搜索 / 内存整形 / 有限搜索** | `pe_v1` 路径的微调。仅限 A18/M4。 |
+| **自动重试失败的链条运行** | 失手后自动重跑链条，有次数上限。 |
+| **注入卡死时受控 panic** | 诊断用：主动写日志并 panic，而非等待看门狗复位。 |
+| **插件应用速度** | 兼容 / 快 / 最快。越高则应用插件的远程调用间延迟越小。 |
+| **详细日志** | 日志中输出完整 RemoteCall 内部信息，用于错误报告。 |
+| **定位服务链接** | 允许 `cyanide://location-services` 链接（默认关闭）。 |
+| **重加载与重启链接** | 允许 `cyanide://respring` 和 `cyanide://reboot` 链接（默认关闭）。 |
+| **仓库源** | 显示或隐藏「源」标签页与仓库插件。 |
+| **立即应用安装器更改** | 有已保存内核访问时，激活/停用插件立即只应用该插件而不排队（默认开启）。 |
+| **后台保活** | Cyanide 退后台后仍需持续运行的插件所必需。 |
 
-Each tweak has its own section in Settings once installed.
+每个插件安装后都会在设置中有独立分区。
 
-## Project status
+## 项目状态
 
-This repository is a fork of
-[`zeroxjf/cyanide`](https://github.com/zeroxjf/cyanide), maintained by
-[Kolbicz](https://github.com/kolbicz). Maintenance is focused primarily on
-Kolbicz-based tweaks. No other changes are planned, and support is not provided
-for tweaks that are not maintained by Kolbicz.
+本仓库是 [`zeroxjf/cyanide`](https://github.com/zeroxjf/cyanide) 的
+fork，中文汉化版由 YiHoooong 维护。汉化范围覆盖应用内全部界面文本，
+不改变任何功能逻辑。
 
-The original Cyanide project is no longer maintained by `zeroxjf`. Anyone may
-fork this repository and continue development in accordance with the license.
-The original authors and upstream projects remain credited below.
+原始 Cyanide 项目已由 `zeroxjf` 停止维护。任何人都可以在本许可证
+条款下 fork 本仓库并继续开发。原作者与上游项目致谢保留在下方。
 
-The old README is preserved below for historical context and build details.
-Some of its information may be outdated.
+旧版 README 保留如下，供历史背景与构建细节参考。其中部分信息可能
+已过时。
 
 <details>
-<summary>Archived project README</summary>
+<summary>归档项目 README（原文）</summary>
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/kolbicz/cyanide/main/Cyanide/Assets.xcassets/AppIcon.appiconset/icon-ios-1024x1024.png" alt="Cyanide" width="160">
@@ -235,184 +229,6 @@ Open this page on your iPhone/iPad and tap one of the buttons below.
 - [Report a bug](https://github.com/kolbicz/cyanide/issues/new?template=bug_report.yml)
 - [Request a feature](https://github.com/kolbicz/cyanide/issues/new?template=feature_request.yml)
 
-## Beta Tweaks
-
-Beta tweaks are free and visible without account linking. They are unstable and
-intended for testers who are comfortable with SpringBoard glitches, crashes, or
-partial behavior.
-
-## Tweaks
-
-These tweaks have been tested on iOS 18.x and 26.x. Expect version drift in
-SpringBoard and related daemons to break things on other releases.
-
-### Status Bar
-
-- **StatBar**: battery temperature and free-RAM overlay anchored to the
-  SpringBoard status bar, with optional C/F and network-speed display.
-- **NSBar**: compact live download/upload speed overlay for the status bar,
-  with selectable corner/center positions. Ported from
-  [`d1y/cyanide-ios`](https://github.com/d1y/cyanide-ios).
-- **NiceBar Lite**: configurable status-bar-adjacent labels for custom text,
-  date/time formats, battery, memory, traffic, uptime, IP address, disk,
-  thermal state, and other live readouts. Ported from
-  [`d1y/cyanide-ios`](https://github.com/d1y/cyanide-ios).
-
-### Home Screen Layout
-
-- **SBCustomizer**: dock icon count, home-screen columns/rows, and hidden icon
-  labels.
-- **Home Layout Extras**: extra padding around the home grid and dock, plus
-  per-icon scale for home and dock icons. Stacks on top of SBCustomizer.
-
-### Performance
-
-- **Powercuff**: CPU/GPU underclocking through simulated `thermalmonitord`
-  pressure levels (off, nominal, light, moderate, heavy). Lasts until reboot.
-  Port of [`rpetrich/Powercuff`](https://github.com/rpetrich/Powercuff).
-
-### SpringBoard Tweaks
-
-Ported from [`kolbicz/DarkSword-Tweaks`](https://github.com/kolbicz/DarkSword-Tweaks):
-
-- **Disable App Library**: removes the App Library page past the last home screen.
-- **Disable Icon Fly-In**: skips the spring-in animation when icons appear.
-- **Zero Wake Animation**: snaps the display on instantly when waking.
-- **Zero Backlight Fade**: instant lock/unlock backlight.
-- **Double-Tap to Lock**: lock the device with a wallpaper double-tap.
-
-### System Updates
-
-- **Disable OTA Updates**: toggles the launchd OTA `disabled.plist` to block or
-  unblock update prompts. Persists across reboots.
-- **Supervision** (Settings → Supervision): Activate / Deactivate set the
-  `IsSupervised` flag in the configuration profiles'
-  `CloudConfigurationDetails.plist`, with "Cyanide" as the organization. No
-  device management is involved. Takes effect without a restart and persists
-  across reboots; Deactivate restores the previous values, and a device
-  supervised by a real organization is left alone.
-
-### Beta
-
-> ⚠︎ Work in progress — these may crash SpringBoard, glitch layout, work only
-> partially, or need re-applying between builds.
-
-- **Gravity Lite**: core port of Julio Verne's classic Gravity tweak. Applies
-  UIDynamicAnimator physics to home-screen and dock icons — gravity, collisions,
-  bounce, friction, accelerometer steering, shake pulses, and an explosion
-  button. Use Restore Icon Layout if icons stay displaced after deactivating.
-- **Axon Lite**: groups Notification Center requests by app with a SpringBoard
-  overlay and dedups duplicates while the RemoteCall session is alive.
-- **Dynamic Stage Lite**: brings Stage Manager-style split-view to iPhone over
-  RemoteCall — no jailbreak required. Hosts a second app's scene alongside
-  SpringBoard using the same scene-hosting design as [`tomt000`'s Dynamic Stage](https://havoc.app/package/dynamicstage).
-- **FastLockX Lite**: keeps Face ID retry/unlock requests armed through
-  SpringBoard timers so pickup-to-unlock can work after Cyanide closes.
-- **Cyanide Themer**: per-bundle icon theme engine. Walks SpringBoard's
-  SBIconView hierarchy and swaps each icon's image with a PNG matched on bundle
-  ID. Ships with iOS 6 Theme; also accepts a custom folder of `<bundleID>.png`
-  files or a binary plist. Pick a theme in Settings before running.
-- **SnowBoard Lite**: imports SnowBoard/IconBundles-style theme folders or
-  archives into Cyanide's local theme library, then applies the selected theme
-  through the existing icon replacement pipeline. Ported from
-  [`d1y/cyanide-ios`](https://github.com/d1y/cyanide-ios).
-- **LiveWP**: copies a selected MP4/MOV/M4V into Cyanide's app container and
-  plays it behind SpringBoard's home and lock screen windows while the live
-  RemoteCall session is active. Ported from
-  [`d1y/cyanide-ios`](https://github.com/d1y/cyanide-ios).
-- **Watch Pairing Override**: edits the watchOS pairing range stored on the
-  iPhone so you can pair a newer Apple Watch or revive an older one. Persists
-  across reboots; respring before pairing.
-- **Location Simulator**: drives Apple's CoreLocation simulation path from a
-  RemoteCall host process and sets a static target coordinate. Simulated
-  locations may violate app terms, platform rules, game rules, ride-share or
-  delivery policies, or local law depending on how they are used. Use only where
-  you have permission; you are responsible for your use and apply or restore it
-  at your own risk. It may also affect location-tied system behavior such as
-  time zone/date/time handling and can have unintended consequences; only use it
-  if you know what you're doing. Credits: `kolbicz` provided the
-  RemoteCall/CLSimulationManager GPS spoofer prototype, and `ezzuldinSt`'s
-  LSpoof provided the app-side spoofing, picker, bookmarks, and route-simulation
-  reference.
-- **Call Recording Sound**: replaces the CallServices
-  `StartDisclosureWithTone` and `StopDisclosure` audio files with Cyanide's
-  bundled silent payloads, with separate Silence and Restore actions. Cyanide
-  backs up the first originals into its app container before replacement, but
-  this is still a persistent system-file edit under
-  `/var/mobile/Library/CallServices/Greetings/default`. Disclosure sounds may be
-  legally required where you live; you are responsible for your use and should
-  restore the originals before removing Cyanide if you want Cyanide's backups
-  written back. Credits: `YangJiiii` (`@duongduong0908`) for the EnsWilde and
-  Disable Call Recording BookRestore reference tools, and `@Little_34306` as
-  credited by the original projects for the Disable Call Recording concept.
-
-### In Development
-
-> These entries are visible but not installable because they do not work yet.
-> Their app/source paths are left in place so someone can pick them up later.
-
-- **Signal Readouts**: unfinished status-bar numeric signal readouts.
-- **TypeBanner**: unfinished iMessage typing banner experiment.
-- **Notification Island**: unfinished Dynamic Island notification mirror.
-- **IPA Decryptor**: unfinished local IPA decryptor workflow.
-
-## Supported Targets
-
-Tested target range:
-
-- iOS/iPadOS 17.0 through 18.7.1
-- iOS/iPadOS 26.0 through 26.0.1
-- A19/M5 devices are not supported
-
-The kernel bugs used here, `CVE-2025-43510` and `CVE-2025-43520`, were fixed in
-iOS/iPadOS 18.7.2 and 26.1. Later builds are outside this kernel exploit window.
-
-## What This Fork Changes
-
-- Cleans shared exploit state before each attempt.
-- Matches the target process with an explicit marker.
-- Validates sockets before using the spray path.
-- Treats missed races as retryable failures instead of hard failures.
-- Tightens the A18/M4 `pe_v2` path with initialized target-file contents,
-  stable local remap addresses, bounded page freeing, socket-spray preflight
-  checks, and controlled zone-trim retries.
-
-## Kernel Research Features
-
-- Escape the app sandbox.
-- Control or crash userspace processes from the app.
-- Change UID, GID, and sticky bits on target files.
-- Disable ASLR by setting `P_DISABLE_ASLR` in `launchd`'s `proc->p_flag`.
-
-## Credits
-
-- [`opa334`](https://github.com/opa334): original [`darksword-kexploit`](https://github.com/opa334/darksword-kexploit), ChOma, and XPF — the kernel r/w primitive Cyanide is built on.
-- [`wh1te4ever`](https://github.com/wh1te4ever): [`kfun` / `darksword-kexploit-fun`](https://github.com/wh1te4ever/darksword-kexploit-fun) — the RemoteCall implementation that lets a sideloaded app apply tweaks inside SpringBoard. Cyanide is a fork of this project.
-- [`rooootdev`](https://github.com/rooootdev): working kexploit behavior used to stabilize this fork, and [lara](https://github.com/rooootdev/lara), whose ideas App Decrypt, SpringBoard Tools and Font Overwrite are ported from (with permission).
-- [`neonmodder123`](https://github.com/neonmodder123): Web Respring method.
-- [`kolbicz`](https://github.com/kolbicz): OTA Disabler, SpringBoard tweaks, and
-  the RemoteCall/CLSimulationManager GPS spoofer prototype used as the starting
-  point for Location Simulator.
-- `ezzuldinSt`: LSpoof app-side `CLLocationManager` spoofing, picker,
-  bookmarks, and route-simulation reference used while shaping Location
-  Simulator.
-- `YangJiiii` (`@duongduong0908`): EnsWilde and Disable Call Recording
-  BookRestore reference tools used while shaping Call Recording Sound.
-- `@Little_34306`: credited by the original call-recording projects for the
-  Disable Call Recording concept.
-- [`rpetrich`](https://github.com/rpetrich): Powercuff.
-- [Julio Verne](https://github.com/julioverne): the original [Gravity](https://github.com/julioverne/Gravity) tweak that Gravity Lite is a core port of.
-- [`d1y`](https://x.com/chenhonzhou): [`cyanide-ios`](https://github.com/d1y/cyanide-ios)
-  AGPL-3.0 sources used for the NSBar, NiceBar Lite, SnowBoard Lite, and
-  LiveWP ports.
-- Banana ([`hxhlb/cyanide`](https://github.com/hxhlb/cyanide)): iPad Dock, ported with changes for iOS 18 and a separate App Library for the Dock.
-- [`tomt000`](https://github.com/tomt000): [Dynamic Stage](https://havoc.app/package/dynamicstage) — the original Stage Manager-for-iPhone tweak whose split-view + scene-hosting design Dynamic Stage Lite re-implements over RemoteCall.
-
-### UI inspiration
-
-- The classic [Installer.app](https://github.com/AppTapp/Installer-3) (Ripdev & Nullriver Software, now maintained by AppTapp and the Legacy Jailbreak community) — the iPhoneOS 1 package-manager look that the Cyanide Installer tab is modeled after.
-- The [Sileo Project](https://github.com/Sileo/Sileo) (the Sileo Team) — the queue → review → confirm install flow and the bottom queue-popup pattern.
-
 ## Build
 
 ```sh
@@ -426,39 +242,33 @@ an unsigned IPA to:
 build/Cyanide.ipa
 ```
 
-Equivalent manual build:
+## License
+
+This repository is licensed under **AGPL-3.0**. See `LICENSE`.
+
+</details>
+
+## 构建
+
+CI（GitHub Actions，`.github/workflows/build.yaml`）为手动触发
+（workflow_dispatch），编译产物为未签名 IPA：
+
+```sh
+./build.sh        # 产出 build/Cyanide.ipa
+```
+
+等价的手动构建：
 
 ```sh
 xcodebuild \
   -project Cyanide.xcodeproj \
   -scheme Cyanide \
   -sdk iphoneos \
-  -configuration Debug \
+  -configuration Release \
   CODE_SIGNING_ALLOWED=NO \
   build
 ```
 
-## License
+## 许可证
 
-This repository is licensed under **AGPL-3.0**. See `LICENSE`.
-
-The NSBar, NiceBar Lite, SnowBoard Lite, and LiveWP ports adapt AGPL-3.0 code
-from [`d1y/cyanide-ios`](https://github.com/d1y/cyanide-ios) and remain in the
-AGPL-covered tree.
-
-## JavaScript Tweaks
-
-Cyanide includes two JavaScript tweak runners contributed by Iggy05:
-
-- **QuickLoader** imports a local `.js` file from Files and exposes declared
-  `@param` values as settings rows.
-- **RepoTweaks Store** imports HTTPS JSON repositories and downloads selected
-  JavaScript tweaks from those sources. Cyanide seeds MinePlayer16's source at
-  `https://raw.githubusercontent.com/MinePlayer16/MinePlayer16.github.io/refs/heads/main/repotweaks.json`
-  by default.
-
-Only run scripts and repositories you trust; JavaScript tweaks can call Cyanide
-RemoteCall helpers and may destabilize SpringBoard if the script is buggy.
-
-
-</details>
+本仓库以 **AGPL-3.0** 许可。见 `LICENSE`。汉化部分同样遵循 AGPL-3.0。

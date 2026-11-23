@@ -727,7 +727,7 @@ static NSString *nbl_free_disk_text(void)
                             forKey:NSURLVolumeAvailableCapacityForImportantUsageKey
                              error:nil] && available) {
         unsigned long long importantMs = nbl_elapsed_ms_since(importantStartUs);
-        NSString *text = [NSString stringWithFormat:@"Disk %@", nbl_format_disk_bytes(available.unsignedLongLongValue)];
+        NSString *text = [NSString stringWithFormat:@"磁盘 %@", nbl_format_disk_bytes(available.unsignedLongLongValue)];
         unsigned long long totalMs = nbl_elapsed_ms_since(startUs);
         if (nbl_should_trace_apply() || totalMs >= kNBLSlowLogMs) {
             NBL_DEBUG_LOG("[NICEBARLITE][DISK] source=important bytes=%llu important=%llums total=%llums\n",
@@ -744,7 +744,7 @@ static NSString *nbl_free_disk_text(void)
                             forKey:NSURLVolumeAvailableCapacityKey
                              error:nil] && available) {
         unsigned long long capacityMs = nbl_elapsed_ms_since(capacityStartUs);
-        NSString *text = [NSString stringWithFormat:@"Disk %@", nbl_format_disk_bytes(available.unsignedLongLongValue)];
+        NSString *text = [NSString stringWithFormat:@"磁盘 %@", nbl_format_disk_bytes(available.unsignedLongLongValue)];
         unsigned long long totalMs = nbl_elapsed_ms_since(startUs);
         if (nbl_should_trace_apply() || totalMs >= kNBLSlowLogMs) {
             NBL_DEBUG_LOG("[NICEBARLITE][DISK] source=available bytes=%llu important=%llums available=%llums total=%llums\n",
@@ -774,9 +774,9 @@ static NSString *nbl_free_disk_text(void)
                      totalMs,
                      error.localizedDescription.UTF8String ?: "none");
         }
-        return @"Disk --";
+        return @"磁盘 --";
     }
-    NSString *text = [NSString stringWithFormat:@"Disk %@", nbl_format_disk_bytes(freeBytes.unsignedLongLongValue)];
+    NSString *text = [NSString stringWithFormat:@"磁盘 %@", nbl_format_disk_bytes(freeBytes.unsignedLongLongValue)];
     if (nbl_should_trace_apply() || totalMs >= kNBLSlowLogMs) {
         NBL_DEBUG_LOG("[NICEBARLITE][DISK] source=filesystem bytes=%llu important=%llums available=%llums fs=%llums total=%llums\n",
                  freeBytes.unsignedLongLongValue,
@@ -794,13 +794,13 @@ static NSString *nbl_thermal_state_text(const char *language)
     NSProcessInfoThermalState state = NSProcessInfo.processInfo.thermalState;
     switch (state) {
         case NSProcessInfoThermalStateNominal:
-            return chinese ? @"❄️ 凉爽" : @"❄️ Cool";
+            return chinese ? @"❄️ 凉爽" : @"❄️ 凉爽";
         case NSProcessInfoThermalStateFair:
-            return chinese ? @"🌡️ 温热" : @"🌡️ Warm";
+            return chinese ? @"🌡️ 温热" : @"🌡️ 温热";
         case NSProcessInfoThermalStateSerious:
-            return chinese ? @"🔥 偏热" : @"🔥 Hot";
+            return chinese ? @"🔥 偏热" : @"🔥 烫";
         case NSProcessInfoThermalStateCritical:
-            return chinese ? @"🚨 过热" : @"🚨 Critical";
+            return chinese ? @"🚨 过热" : @"🚨 严重";
         default:
             return chinese ? @"🌡️ --" : @"🌡️ --";
     }
@@ -845,7 +845,7 @@ static NSString *nbl_lunar_date_text(void)
 {
     NSCalendar *cal = [NSCalendar calendarWithIdentifier:NSCalendarIdentifierChinese];
     NSDateComponents *c = [cal components:NSCalendarUnitMonth | NSCalendarUnitDay fromDate:[NSDate date]];
-    if (c.month <= 0 || c.day <= 0) return @"Lunar --";
+    if (c.month <= 0 || c.day <= 0) return @"农历 --";
     return [NSString stringWithFormat:@"L%02ld/%02ld", (long)c.month, (long)c.day];
 }
 
